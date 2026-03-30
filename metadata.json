@@ -1,0 +1,9 @@
+{
+  "name": "MediFlow AI",
+  "description": "A production-grade healthcare platform with AI-driven diagnostics, real-time appointment management, and comprehensive dashboards for patients, doctors, and admins.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
