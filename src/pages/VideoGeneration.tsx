@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Video, Play, Loader2, Download, AlertCircle, Shield, Info, ArrowRight, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function VideoGeneration() {
   const [prompt, setPrompt] = useState('');
@@ -9,6 +9,14 @@ export default function VideoGeneration() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [hasKey, setHasKey] = useState(false);
   const [status, setStatus] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    { id: 1, label: 'Initializing', description: 'Setting up AI engine...' },
+    { id: 2, label: 'Generating', description: 'Creating video frames...' },
+    { id: 3, label: 'Processing', description: 'Finalizing composition...' },
+    { id: 4, label: 'Downloading', description: 'Retrieving video file...' }
+  ];
 
   useEffect(() => {
     const checkKey = async () => {
@@ -29,11 +37,14 @@ export default function VideoGeneration() {
 
     setLoading(true);
     setVideoUrl(null);
+    setCurrentStep(1);
     setStatus('Initializing AI engine...');
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = (window as any).process?.env?.API_KEY || process.env.GEMINI_API_KEY || "";
+      const ai = new GoogleGenAI({ apiKey });
       
+      setCurrentStep(2);
       setStatus('Generating video frames...');
       let operation = await ai.models.generateVideos({
         model: 'veo-3.1-fast-generate-preview',
@@ -45,6 +56,7 @@ export default function VideoGeneration() {
         }
       });
 
+      setCurrentStep(3);
       while (!operation.done) {
         setStatus('Processing video (this may take a few minutes)...');
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -53,11 +65,12 @@ export default function VideoGeneration() {
 
       const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
       if (downloadLink) {
+        setCurrentStep(4);
         setStatus('Finalizing video download...');
         const response = await fetch(downloadLink, {
           method: 'GET',
           headers: {
-            'x-goog-api-key': process.env.GEMINI_API_KEY || '',
+            'x-goog-api-key': apiKey,
           },
         });
         const blob = await response.blob();
@@ -71,6 +84,7 @@ export default function VideoGeneration() {
     } finally {
       setLoading(false);
       setStatus('');
+      setCurrentStep(0);
     }
   };
 
@@ -160,35 +174,75 @@ export default function VideoGeneration() {
             </form>
 
             <AnimatePresence>
-              {status && (
+              {loading && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="flex items-center gap-4 p-6 bg-blue-600/10 border border-blue-600/20 rounded-2xl text-blue-400 font-bold text-sm"
+                  className="p-8 bg-blue-600/5 border border-blue-600/20 rounded-[2rem] space-y-8"
                 >
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {status}
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest">Generation Progress</h4>
+                    <span className="text-[10px] font-black text-blue-500/50 uppercase tracking-widest">Step {currentStep} of 4</span>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {steps.map((step) => (
+                      <div key={step.id} className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all duration-500 ${
+                          currentStep >= step.id 
+                            ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' 
+                            : 'bg-white/5 text-slate-600 border border-white/10'
+                        }`}>
+                          {currentStep > step.id ? '✓' : step.id}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-black transition-colors duration-500 ${
+                            currentStep >= step.id ? 'text-white' : 'text-slate-600'
+                          }`}>{step.label}</p>
+                          <p className={`text-[10px] font-medium transition-colors duration-500 ${
+                            currentStep === step.id ? 'text-blue-400' : 'text-slate-700'
+                          }`}>{step.description}</p>
+                        </div>
+                        {currentStep === step.id && (
+                          <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-3 text-blue-400/80">
+                      <Info className="w-4 h-4 shrink-0" />
+                      <p className="text-[10px] font-medium leading-relaxed italic">
+                        {status || 'Preparing your cinematic medical visualization...'}
+                      </p>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="p-8 bg-white/5 border border-white/10 rounded-3xl space-y-6">
-              <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Generation Tips</h4>
-              <ul className="space-y-4 text-slate-400 text-sm font-medium">
-                <li className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 shrink-0"></div>
-                  Be specific about medical terminology and visual style.
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 shrink-0"></div>
-                  Mention lighting and camera angles for better cinematic results.
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 shrink-0"></div>
-                  Generation can take 2-5 minutes depending on complexity.
-                </li>
-              </ul>
+            <div className="p-10 bg-white/5 border border-white/10 rounded-[2.5rem] space-y-8 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Sparkles className="w-12 h-12 text-blue-400" />
+              </div>
+              <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Info className="w-4 h-4 text-blue-600" />
+                Generation Tips
+              </h4>
+              <div className="grid grid-cols-1 gap-6">
+                {[
+                  { title: 'Be Descriptive', text: 'Include specific medical terms like "cellular level", "MRI scan style", or "3D anatomical model".' },
+                  { title: 'Cinematic Style', text: 'Add keywords like "4K", "highly detailed", "professional lighting", or "slow motion".' },
+                  { title: 'Patient Focus', text: 'Describe the patient demographic if relevant for more accurate educational context.' }
+                ].map((tip, i) => (
+                  <div key={i} className="space-y-1">
+                    <p className="text-xs font-black text-slate-300">{tip.title}</p>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{tip.text}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

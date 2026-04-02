@@ -39,7 +39,7 @@ import {
   PieChart,
   Pie
 } from 'recharts';
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -296,11 +296,11 @@ export default function DoctorDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 space-y-10 pb-10"
+        className="relative z-10 space-y-12 pb-16"
       >
       {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-        <motion.div variants={itemVariants} className="flex items-center gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-4">
+        <motion.div variants={itemVariants} className="flex items-center gap-8">
           <div className="relative">
             <div className="w-20 h-20 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl">
               <img 
@@ -344,13 +344,13 @@ export default function DoctorDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {stats.map((stat, i) => (
           <motion.div 
             key={i}
             variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="group relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-xl shadow-slate-200/50 border border-slate-100"
+            whileHover={{ y: -8 }}
+            className="group relative overflow-hidden rounded-[3rem] bg-white p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
           >
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-8">
@@ -381,13 +381,13 @@ export default function DoctorDashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-10">
+      <div className="grid lg:grid-cols-3 gap-12">
         {/* Main Column */}
-        <div className="lg:col-span-2 space-y-10">
+        <div className="lg:col-span-2 space-y-12">
           {/* Throughput Chart */}
           <motion.div 
             variants={itemVariants}
-            className="rounded-[3rem] bg-white p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
+            className="rounded-[3.5rem] bg-white p-12 shadow-xl shadow-slate-200/50 border border-slate-100"
           >
             <div className="flex items-center justify-between mb-10">
               <div>
@@ -441,7 +441,7 @@ export default function DoctorDashboard() {
           {/* Priority Distribution Chart */}
           <motion.div 
             variants={itemVariants}
-            className="rounded-[3rem] bg-white p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
+            className="rounded-[3.5rem] bg-white p-12 shadow-xl shadow-slate-200/50 border border-slate-100"
           >
             <div className="flex items-center justify-between mb-10">
               <div>
@@ -498,9 +498,9 @@ export default function DoctorDashboard() {
           {/* Patient Priority Queue */}
           <motion.div 
             variants={itemVariants}
-            className="rounded-[3rem] bg-white shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+            className="rounded-[3.5rem] bg-white shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
           >
-            <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+            <div className="p-12 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
               <div>
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Priority Queue</h3>
                 <p className="text-sm text-slate-400 font-medium">Real-time patient triage & status</p>
@@ -621,14 +621,14 @@ export default function DoctorDashboard() {
           {/* Availability & Schedule Management */}
           <motion.div 
             variants={itemVariants}
-            className="rounded-[3rem] bg-white shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+            className="rounded-[3.5rem] bg-white shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
           >
-            <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+            <div className="p-12 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
               <div>
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Availability & Schedule</h3>
                 <p className="text-sm text-slate-400 font-medium">Manage your consultation slots and working hours</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                   className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 transition-all"
@@ -647,7 +647,7 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            <div className="p-10 grid lg:grid-cols-2 gap-12">
+            <div className="p-12 grid lg:grid-cols-2 gap-16">
               {/* Calendar Grid */}
               <div className="space-y-6">
                 <div className="grid grid-cols-7 gap-2">
@@ -766,11 +766,11 @@ export default function DoctorDashboard() {
         </div>
 
         {/* Sidebar Column */}
-        <div className="space-y-10">
+        <div className="space-y-12">
           {/* Quick Actions */}
           <motion.div 
             variants={itemVariants}
-            className="rounded-[3rem] bg-white p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
+            className="rounded-[3.5rem] bg-white p-12 shadow-xl shadow-slate-200/50 border border-slate-100"
           >
             <h3 className="text-xl font-black text-slate-900 mb-8">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-4">

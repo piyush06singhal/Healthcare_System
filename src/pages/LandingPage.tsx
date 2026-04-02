@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { useRef } from 'react';
 import { ArrowRight, Shield, Zap, Heart, Activity, Users, Calendar, ChevronRight, Star, CheckCircle2, Play, Globe, Lock, Cpu, Phone, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -496,7 +496,8 @@ export default function LandingPage() {
                   {[
                     "https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=200",
                     "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200",
-                    "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200"
+                    "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200",
+                    "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200"
                   ].map((url, i) => (
                     <motion.img 
                       key={i} 

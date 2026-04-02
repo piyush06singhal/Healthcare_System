@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Loader2, X, Check, Copy, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface VoiceToTextProps {
   onTranscript: (text: string) => void;

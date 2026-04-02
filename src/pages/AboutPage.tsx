@@ -2,7 +2,7 @@ import { Activity, Shield, Users, Globe, Heart, Zap, ArrowRight, Star, Cpu, Chec
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { useRef } from 'react';
 
 export default function AboutPage() {
@@ -181,7 +181,7 @@ export default function AboutPage() {
           >
             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white">
               <img 
-                src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&q=80&w=1200" 
+                src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200" 
                 className="w-full h-auto grayscale hover:grayscale-0 transition-all duration-700" 
                 alt="Medical Research"
                 referrerPolicy="no-referrer"

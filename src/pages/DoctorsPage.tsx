@@ -1,6 +1,7 @@
 import { Search, Filter, Star, MapPin, Calendar, ArrowRight, CheckCircle2, Heart, Shield, Users, ChevronRight, X, Clock, Activity, Phone, Award, BookOpen } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'motion/react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -11,7 +12,7 @@ const doctors = [
     rating: 4.9,
     reviews: 124,
     location: "New York, USA",
-    image: "https://images.unsplash.com/photo-1591608971362-f08b2a75731a?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=800",
     tags: ["Heart Health", "Surgery"]
   },
   {
@@ -96,6 +97,18 @@ export default function DoctorsPage() {
   const gridY = useTransform(gridScrollY, [0, 1], [50, -50]);
 
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const categories = ["All", "Cardiologist", "Neurologist", "Pediatrician", "Dermatologist", "Psychiatrist", "Orthopedic"];
+
+  const filteredDoctors = doctors.filter(doc => {
+    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         doc.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         doc.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || doc.specialty === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="bg-white min-h-screen selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
@@ -212,16 +225,42 @@ export default function DoctorsPage() {
               <input 
                 type="text" 
                 placeholder="Search by name, specialty, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-16 pr-8 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium"
               />
             </div>
-            <button className="flex items-center gap-3 px-8 py-5 bg-slate-50 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-100 transition-colors">
-              <Filter className="w-4 h-4" />
-              Filters
-            </button>
-            <button className="px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-200 transition-all">
-              Search Now
-            </button>
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto no-scrollbar pb-2 md:pb-0">
+              <button 
+                onClick={() => {
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(() => {
+                      setSearchQuery("New York"); // Mocking location search
+                      toast.success("Finding specialists near you...");
+                    }, () => {
+                      toast.error("Location access denied. Please search manually.");
+                    });
+                  }
+                }}
+                className="flex items-center gap-2 px-6 py-4 bg-emerald-50 text-emerald-600 rounded-2xl font-black uppercase tracking-widest text-[10px] whitespace-nowrap hover:bg-emerald-100 transition-all"
+              >
+                <MapPin className="w-3 h-3" />
+                Find Near Me
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] whitespace-nowrap transition-all ${
+                    selectedCategory === cat 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                      : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -229,8 +268,9 @@ export default function DoctorsPage() {
       {/* Doctors Grid */}
       <section ref={gridRef} className="py-24 px-6 relative">
         <motion.div style={{ y: gridY }} className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {doctors.map((doc, i) => (
+          {filteredDoctors.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {filteredDoctors.map((doc, i) => (
               <motion.div 
                 key={i} 
                 initial={{ opacity: 0, y: 30 }}
@@ -294,7 +334,22 @@ export default function DoctorsPage() {
                 </div>
               </motion.div>
             ))}
-          </div>
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-10 h-10 text-slate-300" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">No specialists found</h3>
+              <p className="text-slate-500 font-medium">Try adjusting your search or filters to find what you're looking for.</p>
+              <button 
+                onClick={() => { setSearchQuery(""); setSelectedCategory("All"); }}
+                className="mt-8 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-200"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
         </motion.div>
       </section>
 
@@ -447,6 +502,29 @@ export default function DoctorsPage() {
                       <span className="px-4 py-2 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-100">
                         Diagnostics
                       </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      Availability
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                        <div key={day} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                          <div className="text-[10px] font-black text-slate-400 uppercase mb-1">{day}</div>
+                          <div className="text-xs font-bold text-slate-900">9:00 AM</div>
+                        </div>
+                      ))}
+                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center ring-2 ring-blue-600 ring-offset-2">
+                        <div className="text-[10px] font-black text-blue-600 uppercase mb-1">Today</div>
+                        <div className="text-xs font-black text-blue-600">2:30 PM</div>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center opacity-50">
+                        <div className="text-[10px] font-black text-slate-400 uppercase mb-1">Sun</div>
+                        <div className="text-xs font-bold text-slate-400">Closed</div>
+                      </div>
                     </div>
                   </div>
 

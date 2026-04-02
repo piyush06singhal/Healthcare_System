@@ -1,6 +1,6 @@
 import { Activity, ArrowLeft, Shield, Lock, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;

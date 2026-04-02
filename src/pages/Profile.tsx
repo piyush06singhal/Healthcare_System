@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Shield, Camera, Save, Loader2, ChevronRight, Globe, Lock, Star, Activity, CreditCard, Bell, Settings, Clock } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useScroll, useSpring, useTransform } from 'motion/react';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -30,13 +31,20 @@ export default function Profile() {
     phone: '+1 (555) 000-0000',
     address: 'San Francisco, CA',
     bio: 'Dedicated healthcare professional focused on patient-centric care and digital health innovation.',
+    specialty: 'Cardiology',
+    education: 'Harvard Medical School',
+    experience: '12 Years',
+    certifications: 'Board Certified in Cardiovascular Disease',
   });
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     // Simulate API call
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => {
+      setLoading(false);
+      toast.success('Profile updated successfully');
+    }, 1000);
   };
 
   return (
@@ -96,10 +104,11 @@ export default function Profile() {
           <div className="card p-4 space-y-2">
             {[
               { id: 'personal', label: 'Personal Info', icon: User },
+              { id: 'professional', label: 'Professional', icon: Star, show: user?.role === 'doctor' },
               { id: 'security', label: 'Security', icon: Shield },
               { id: 'billing', label: 'Billing', icon: CreditCard },
               { id: 'notifications', label: 'Notifications', icon: Bell },
-            ].map((tab) => (
+            ].filter(t => t.show !== false).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -225,6 +234,61 @@ export default function Profile() {
                   />
                 </div>
               </>
+            )}
+
+            {activeTab === 'professional' && user?.role === 'doctor' && (
+              <div className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Specialty</label>
+                    <div className="relative group">
+                      <Activity className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                      <input 
+                        type="text" 
+                        className="input-field pl-14" 
+                        value={formData.specialty}
+                        onChange={(e) => setFormData({...formData, specialty: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Education</label>
+                    <div className="relative group">
+                      <Globe className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                      <input 
+                        type="text" 
+                        className="input-field pl-14" 
+                        value={formData.education}
+                        onChange={(e) => setFormData({...formData, education: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Experience</label>
+                    <div className="relative group">
+                      <Clock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                      <input 
+                        type="text" 
+                        className="input-field pl-14" 
+                        value={formData.experience}
+                        onChange={(e) => setFormData({...formData, experience: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Certifications</label>
+                    <div className="relative group">
+                      <Shield className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                      <input 
+                        type="text" 
+                        className="input-field pl-14" 
+                        value={formData.certifications}
+                        onChange={(e) => setFormData({...formData, certifications: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
             {activeTab === 'security' && (

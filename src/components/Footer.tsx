@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Activity, Globe, Lock, Cpu, Shield, Mail, Phone, MapPin, Instagram, Twitter, Linkedin, Facebook } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -27,15 +27,22 @@ export default function Footer() {
               Revolutionizing healthcare through <span className="text-white font-bold">AI-driven insights</span> and secure medical data management. Precision-engineered for clinical excellence.
             </p>
             <div className="flex gap-5">
-              {[Twitter, Facebook, Instagram, Linkedin].map((Icon, i) => (
+              {[
+                { icon: Twitter, url: "https://x.com/PiyushS07508112" },
+                { icon: Facebook, url: "#" },
+                { icon: Instagram, url: "https://www.instagram.com/_piyush_singhal12/" },
+                { icon: Linkedin, url: "https://www.linkedin.com/in/piyush--singhal/" }
+              ].map((social, i) => (
                 <motion.a
                   key={i}
-                  href="#"
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={{ y: -8, scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
                   className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all cursor-pointer shadow-lg"
                 >
-                  <Icon className="w-5 h-5" />
+                  <social.icon className="w-5 h-5" />
                 </motion.a>
               ))}
             </div>
@@ -101,7 +108,7 @@ export default function Footer() {
             </div>
             <div>
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Email Support</div>
-              <div className="text-white font-bold text-sm">hello@mediflow.ai</div>
+              <div className="text-white font-bold text-sm">piyush.singhal.2004@gmail.com</div>
             </div>
           </div>
           <div className="flex items-center gap-5 group">
@@ -110,7 +117,7 @@ export default function Footer() {
             </div>
             <div>
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Emergency Line</div>
-              <div className="text-white font-bold text-sm">+1 (800) MEDI-HELP</div>
+              <div className="text-white font-bold text-sm">+91 9694984312</div>
             </div>
           </div>
           <div className="flex items-center gap-5 group">
@@ -119,7 +126,7 @@ export default function Footer() {
             </div>
             <div>
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Global HQ</div>
-              <div className="text-white font-bold text-sm">San Francisco, CA</div>
+              <div className="text-white font-bold text-sm">Jaipur, Rajasthan, India</div>
             </div>
           </div>
         </div>

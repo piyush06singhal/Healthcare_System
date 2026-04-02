@@ -1,5 +1,5 @@
 import { Stethoscope, Activity, FileText, MessageSquare, Calculator, ShieldCheck, ArrowRight, Zap, Heart, Users, Globe, Lock, Cpu, Star, Shield, Search, Calendar, CheckCircle2, ChevronRight } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';

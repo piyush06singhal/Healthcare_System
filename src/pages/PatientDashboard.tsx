@@ -25,9 +25,15 @@ import {
   Pill,
   Target,
   Users,
-  Bell
+  Bell,
+  Video,
+  Calculator,
+  Layout,
+  Phone,
+  MapPin,
+  ArrowRight
 } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 import { 
   AreaChart, 
   Area, 
@@ -49,6 +55,7 @@ import { RootState } from '../store';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const biometricData = [
   { time: '00:00', heartRate: 68, bloodOxygen: 98, sleep: 0 },
@@ -202,6 +209,53 @@ export default function PatientDashboard() {
     }
   };
 
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
+
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const healthTips = [
+    { 
+      title: "Stay Hydrated", 
+      desc: "Drinking enough water is essential for maintaining focus and mental clarity throughout your day.",
+      icon: <Zap className="w-4 h-4 text-amber-400" />,
+      image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400"
+    },
+    { 
+      title: "Sleep Quality", 
+      desc: "Aim for 7-9 hours of quality sleep to allow your body to repair and your mind to consolidate memories.",
+      icon: <Clock className="w-4 h-4 text-blue-400" />,
+      image: "https://images.unsplash.com/photo-1511295742364-9119143661c1?auto=format&fit=crop&q=80&w=400"
+    },
+    { 
+      title: "Mindful Eating", 
+      desc: "Pay attention to your hunger cues and savor each bite to improve digestion and prevent overeating.",
+      icon: <Heart className="w-4 h-4 text-rose-400" />,
+      image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=400"
+    }
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % healthTips.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const suggestedActions = [
+    { id: 'video-calls', label: 'Add Video Calls', icon: <Phone className="w-4 h-4" />, color: 'text-blue-600', bg: 'bg-blue-50', action: () => navigate('/dashboard/video-consultation') },
+    { id: 'doctor-profiles', label: 'Enhance Doctor Profiles', icon: <Users className="w-4 h-4" />, color: 'text-purple-600', bg: 'bg-purple-50', action: () => navigate('/doctors') },
+    { id: 'find-near-me', label: 'Add "Find Near Me"', icon: <MapPin className="w-4 h-4" />, color: 'text-emerald-600', bg: 'bg-emerald-50', action: () => navigate('/doctors') },
+    { id: 'availability', label: 'Implement Doctor Availability Calendar', icon: <Calendar className="w-4 h-4" />, color: 'text-rose-600', bg: 'bg-rose-50', action: () => navigate('/doctors') },
+    { id: 'search-filter', label: 'Improve Search Filtering', icon: <Search className="w-4 h-4" />, color: 'text-amber-600', bg: 'bg-amber-50', action: () => navigate('/doctors') },
+    { id: 'prescription', label: 'Add Prescription', icon: <FileText className="w-4 h-4" />, color: 'text-indigo-600', bg: 'bg-indigo-50', action: () => setIsPrescriptionModalOpen(true) },
+    { id: 'video', label: 'Generate AI Video', icon: <Video className="w-4 h-4" />, color: 'text-rose-600', bg: 'bg-rose-50', action: () => navigate('/dashboard/video-gen') },
+    { id: 'calculators', label: 'Health Calculators', icon: <Calculator className="w-4 h-4" />, color: 'text-indigo-600', bg: 'bg-indigo-50', action: () => navigate('/dashboard/calculators') },
+    { id: 'chat', label: 'AI Symptom Checker', icon: <Activity className="w-4 h-4" />, color: 'text-emerald-600', bg: 'bg-emerald-50', action: () => navigate('/dashboard/ai-chat') },
+    { id: 'viz', label: 'View Analytics', icon: <TrendingUp className="w-4 h-4" />, color: 'text-amber-600', bg: 'bg-amber-50', action: () => document.getElementById('biometric-telemetry')?.scrollIntoView({ behavior: 'smooth' }) },
+    { id: 'reminder', label: 'Set Med Reminder', icon: <Bell className="w-4 h-4" />, color: 'text-cyan-600', bg: 'bg-cyan-50', action: () => setIsReminderModalOpen(true) },
+  ];
+
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-hidden">
       {/* Scroll Progress Bar */}
@@ -234,10 +288,10 @@ export default function PatientDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 space-y-10 pb-10"
+        className="relative z-10 space-y-12 pb-16"
       >
       {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 mb-4">
         <motion.div variants={itemVariants}>
           <div className="flex items-center gap-3 mb-4">
             <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
@@ -269,7 +323,7 @@ export default function PatientDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
           { label: 'Heart Rate', value: '72', unit: 'bpm', icon: <Heart className="w-6 h-6" />, color: 'text-rose-600', bg: 'bg-rose-50', trend: '+2%', status: 'Normal' },
           { label: 'Blood Oxygen', value: '98', unit: '%', icon: <Droplets className="w-6 h-6" />, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Stable', status: 'Optimal' },
@@ -279,8 +333,8 @@ export default function PatientDashboard() {
           <motion.div
             key={i}
             variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden group hover:shadow-2xl transition-all"
+            whileHover={{ y: -8 }}
+            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 relative overflow-hidden group hover:shadow-2xl transition-all"
           >
             <div className="flex justify-between items-start mb-6">
               <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -306,13 +360,47 @@ export default function PatientDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-10">
+      <div className="grid lg:grid-cols-3 gap-12">
         {/* Left Column: Charts & Insights */}
-        <div className="lg:col-span-2 space-y-10">
+        <div className="lg:col-span-2 space-y-12">
+          {/* Suggested Actions Section */}
+          <motion.div 
+            variants={itemVariants}
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100 overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <Sparkles className="w-6 h-6 text-blue-600" />
+                Suggested Next Steps
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                {suggestedActions.map((action) => (
+                  <button
+                    key={action.id}
+                    onClick={action.action}
+                    className={`flex items-center gap-3 px-6 py-4 ${action.bg} ${action.color} rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-sm border border-transparent hover:border-current`}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-64 h-full opacity-10 pointer-events-none">
+              <img 
+                src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400" 
+                className="w-full h-full object-cover" 
+                alt="Health Illustration"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          </motion.div>
+
           {/* Biometric Chart */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+            id="biometric-telemetry"
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
           >
             <div className="flex items-center justify-between mb-10">
               <div>
@@ -378,11 +466,11 @@ export default function PatientDashboard() {
           </motion.div>
 
           {/* Activity & Insights */}
-          <div className="grid md:grid-cols-2 gap-10">
+          <div className="grid md:grid-cols-2 gap-12">
             {/* Activity Chart */}
             <motion.div 
               variants={itemVariants}
-              className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+              className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
             >
               <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
                 <TrendingUp className="w-6 h-6 text-emerald-500" />
@@ -415,7 +503,7 @@ export default function PatientDashboard() {
             {/* AI Insights */}
             <motion.div 
               variants={itemVariants}
-              className="bg-slate-900 p-10 rounded-[3rem] shadow-xl relative overflow-hidden"
+              className="bg-slate-900 p-12 rounded-[3.5rem] shadow-xl relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div>
               <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3 relative z-10">
@@ -445,7 +533,7 @@ export default function PatientDashboard() {
           {/* Health Goals */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
           >
             <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
               <Target className="w-6 h-6 text-blue-600" />
@@ -474,11 +562,11 @@ export default function PatientDashboard() {
           </motion.div>
 
           {/* Health Trends Section */}
-          <div className="grid md:grid-cols-2 gap-10">
+          <div className="grid md:grid-cols-2 gap-12">
             {/* Weight Trend Chart */}
             <motion.div 
               variants={itemVariants}
-              className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+              className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
             >
               <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
                 <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -526,7 +614,8 @@ export default function PatientDashboard() {
             {/* Health Distribution Pie Chart */}
             <motion.div 
               variants={itemVariants}
-              className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+              id="health-distribution-chart"
+              className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
             >
               <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
                 <Activity className="w-6 h-6 text-purple-600" />
@@ -573,11 +662,53 @@ export default function PatientDashboard() {
         </div>
 
         {/* Right Column: Quick Actions & Appointments */}
-        <div className="space-y-10">
+        <div className="space-y-12">
+          {/* Health Tip of the Day */}
+          <motion.div 
+            variants={itemVariants}
+            className="bg-gradient-to-br from-slate-900 to-slate-800 p-12 rounded-[3.5rem] shadow-xl text-white relative overflow-hidden"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key={currentTipIndex}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="relative z-10"
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg text-[10px] font-black uppercase tracking-widest mb-6">
+                  {healthTips[currentTipIndex].icon}
+                  Health Tip
+                </div>
+                <h3 className="text-2xl font-black mb-4 tracking-tight">{healthTips[currentTipIndex].title}</h3>
+                <p className="text-slate-300 text-xs font-medium leading-relaxed mb-8">
+                  {healthTips[currentTipIndex].desc}
+                </p>
+                <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg shadow-blue-600/20">
+                  Learn More
+                </button>
+              </motion.div>
+            </AnimatePresence>
+            <div className="absolute top-0 right-0 w-1/2 h-full opacity-30">
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={currentTipIndex}
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 0.3, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  src={healthTips[currentTipIndex].image} 
+                  className="w-full h-full object-cover" 
+                  alt="Health Tip"
+                  referrerPolicy="no-referrer"
+                />
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
           {/* Medication Tracker */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
           >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900">Medications</h3>
@@ -613,7 +744,7 @@ export default function PatientDashboard() {
           {/* Quick Actions */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
           >
             <h3 className="text-xl font-black text-slate-900 mb-8">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -637,7 +768,7 @@ export default function PatientDashboard() {
           {/* Upcoming Appointments & Reminders */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
           >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900">Appointments</h3>
@@ -737,6 +868,156 @@ export default function PatientDashboard() {
           </motion.div>
         </div>
       </div>
+
+      {/* Prescription History Modal */}
+      <AnimatePresence>
+        {isPrescriptionModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPrescriptionModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl p-12"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Prescription History</h2>
+                <button onClick={() => setIsPrescriptionModalOpen(false)} className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all">
+                  <Plus className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+              <div className="space-y-6">
+                {[
+                  { name: 'Amoxicillin', date: 'Jan 12, 2026', doctor: 'Dr. Emily Brown', status: 'Completed' },
+                  { name: 'Ibuprofen', date: 'Feb 05, 2026', doctor: 'Dr. Michael Chen', status: 'Completed' },
+                  { name: 'Lisinopril', date: 'Mar 01, 2026', doctor: 'Dr. Sarah Johnson', status: 'Active' },
+                ].map((item, i) => (
+                  <div key={i} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                    <div>
+                      <div className="text-lg font-black text-slate-900">{item.name}</div>
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.date} • {item.doctor}</div>
+                    </div>
+                    <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${item.status === 'Active' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+                      {item.status}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="w-full mt-10 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all">
+                Upload New Prescription
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Med Reminder Modal */}
+      <AnimatePresence>
+        {isReminderModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsReminderModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-12"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Add Reminder</h2>
+                <button onClick={() => setIsReminderModalOpen(false)} className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all">
+                  <Plus className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Medication Name</label>
+                  <input type="text" placeholder="e.g. Vitamin D3" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Time</label>
+                    <input type="time" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frequency</label>
+                    <select className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium">
+                      <option>Daily</option>
+                      <option>Weekly</option>
+                      <option>As needed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <button className="w-full mt-10 py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
+                Set Reminder
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Health Goals Modal */}
+      <AnimatePresence>
+        {isGoalsModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsGoalsModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl p-12"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Health Goals</h2>
+                <button onClick={() => setIsGoalsModalOpen(false)} className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all">
+                  <Plus className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+              <div className="space-y-8">
+                {healthGoals.map((goal, i) => (
+                  <div key={i} className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <div className="text-lg font-black text-slate-900">{goal.name}</div>
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Target: {goal.target} {goal.unit}</div>
+                      </div>
+                      <div className="text-2xl font-black text-blue-600">{goal.progress}%</div>
+                    </div>
+                    <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${goal.progress}%` }}
+                        className="h-full bg-gradient-to-r from-blue-600 to-purple-600"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="w-full mt-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition-all">
+                Add New Goal
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
     </div>
   );

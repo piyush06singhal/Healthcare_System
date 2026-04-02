@@ -13,6 +13,7 @@ export default defineConfig(({mode}) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        '@google/genai': path.resolve(__dirname, 'node_modules/@google/genai/dist/web/index.mjs'),
       },
     },
     server: {

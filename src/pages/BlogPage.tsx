@@ -1,5 +1,5 @@
 import { Search, Filter, Star, MapPin, Calendar, ArrowRight, CheckCircle2, Heart, Shield, Users, Clock, MessageSquare, BookOpen, TrendingUp, Zap } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -12,7 +12,7 @@ const posts = [
     date: "Mar 24, 2026",
     readTime: "8 min read",
     category: "Technology",
-    image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&q=80&w=800"
+    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800"
   },
   {
     title: "10 Tips for Maintaining a Healthy Heart",
@@ -21,7 +21,7 @@ const posts = [
     date: "Mar 22, 2026",
     readTime: "5 min read",
     category: "Wellness",
-    image: "https://images.unsplash.com/photo-1505751172107-573957a003df?auto=format&fit=crop&q=80&w=800"
+    image: "https://images.unsplash.com/photo-1505751172107-573957a003df?w=800"
   },
   {
     title: "Understanding Mental Health in the Digital Age",
@@ -30,7 +30,7 @@ const posts = [
     date: "Mar 20, 2026",
     readTime: "12 min read",
     category: "Mental Health",
-    image: "https://images.unsplash.com/photo-1527137342181-19aab11a8ee1?auto=format&fit=crop&q=80&w=800"
+    image: "https://images.unsplash.com/photo-1527137342181-19aab11a8ee1?w=800"
   },
   {
     title: "The Importance of Regular Health Checkups",
@@ -39,7 +39,7 @@ const posts = [
     date: "Mar 18, 2026",
     readTime: "6 min read",
     category: "Prevention",
-    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800"
+    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800"
   },
   {
     title: "Nutrition Myths Debunked by Science",
@@ -48,7 +48,7 @@ const posts = [
     date: "Mar 15, 2026",
     readTime: "10 min read",
     category: "Nutrition",
-    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17051?auto=format&fit=crop&q=80&w=800"
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
   },
   {
     title: "Advances in Pediatric Vaccination",
@@ -57,7 +57,7 @@ const posts = [
     date: "Mar 12, 2026",
     readTime: "7 min read",
     category: "Pediatrics",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=800"
+    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800"
   }
 ];
 
@@ -169,6 +169,9 @@ export default function BlogPage() {
                 className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-1000" 
                 alt="Featured Post"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800";
+                }}
               />
               <div className="absolute top-8 left-8 px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
                 Featured Post
@@ -217,6 +220,9 @@ export default function BlogPage() {
                     className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-2 transition-transform duration-700" 
                     alt={post.title}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800";
+                    }}
                   />
                   <div className="absolute top-6 left-6 px-4 py-2 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-900 shadow-lg">
                     {post.category}

@@ -1,5 +1,5 @@
 import { Mail, Phone, MapPin, Send, Globe, MessageSquare, Clock, Shield, Star, ChevronDown, Facebook, Twitter, Instagram, Linkedin, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 import { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -133,15 +133,15 @@ export default function ContactPage() {
 
                 <div className="grid sm:grid-cols-2 gap-8">
                   {[
-                    { icon: <Phone className="w-6 h-6" />, label: "Call Us", value: "+1 (888) MEDI-FLOW", color: "text-blue-600" },
-                    { icon: <Mail className="w-6 h-6" />, label: "Email Us", value: "support@mediflow.ai", color: "text-emerald-600" },
-                    { icon: <MapPin className="w-6 h-6" />, label: "Visit Us", value: "101 Health Tech Plaza, SF", color: "text-purple-600" },
+                    { icon: <Phone className="w-6 h-6" />, label: "Call Us", value: "+91 9694984312", color: "text-blue-600" },
+                    { icon: <Mail className="w-6 h-6" />, label: "Email Us", value: "piyush.singhal.2004@gmail.com", color: "text-emerald-600" },
+                    { icon: <MapPin className="w-6 h-6" />, label: "Visit Us", value: "Jaipur, Rajasthan, India", color: "text-purple-600" },
                     { icon: <Clock className="w-6 h-6" />, label: "Working Hours", value: "24/7 Support", color: "text-amber-600" },
                   ].map((item, i) => (
                     <div key={i} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 hover:shadow-xl transition-all group">
                       <div className={`${item.color} mb-4 group-hover:scale-110 transition-transform`}>{item.icon}</div>
                       <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</div>
-                      <div className="text-lg font-black text-slate-900">{item.value}</div>
+                      <div className="text-lg font-black text-slate-900 break-all">{item.value}</div>
                     </div>
                   ))}
                 </div>
@@ -151,10 +151,21 @@ export default function ContactPage() {
                     <h3 className="text-2xl font-black mb-4">Join Our Community</h3>
                     <p className="opacity-80 mb-8 font-medium">Follow us on social media for the latest updates and health tips.</p>
                     <div className="flex gap-4">
-                      {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-                        <button key={i} className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors">
-                          <Icon className="w-5 h-5" />
-                        </button>
+                      {[
+                        { icon: Facebook, url: "#" },
+                        { icon: Twitter, url: "https://x.com/PiyushS07508112" },
+                        { icon: Instagram, url: "https://www.instagram.com/_piyush_singhal12/" },
+                        { icon: Linkedin, url: "https://www.linkedin.com/in/piyush--singhal/" }
+                      ].map((social, i) => (
+                        <a 
+                          key={i} 
+                          href={social.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors"
+                        >
+                          <social.icon className="w-5 h-5" />
+                        </a>
                       ))}
                     </div>
                   </div>
@@ -268,16 +279,16 @@ export default function ContactPage() {
           <div className="text-[25rem] font-black text-blue-900/10 whitespace-nowrap rotate-12">GLOBAL REACH</div>
         </motion.div>
         <div className="max-w-7xl mx-auto h-[600px] rounded-[4rem] overflow-hidden relative group shadow-2xl border-8 border-slate-50">
-          <img 
-            src="https://images.unsplash.com/photo-1557825835-b74677a611c0?auto=format&fit=crop&q=80&w=2000" 
-            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000" 
-            alt="Global Presence"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-blue-900/40 mix-blend-multiply"></div>
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d227748.3825624477!2d75.65046970865716!3d26.88544791796718!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396c4adf4c57e281%3A0xce1c63d0cf22e09!2sJaipur%2C%20Rajasthan!5e0!3m2!1sen!2sin!4v1711962643123!5m2!1sen!2sin" 
+            className="w-full h-full border-0 grayscale group-hover:grayscale-0 transition-all duration-1000" 
+            allowFullScreen={true} 
+            loading="lazy" 
+            referrerPolicy="no-referrer-when-downgrade"
+          ></iframe>
           <div className="absolute bottom-12 left-12 z-[10] glass-card p-8 rounded-[2rem] border border-white/20 shadow-2xl pointer-events-none">
-            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Global Reach</h2>
-            <p className="text-white/80 font-medium">Serving patients across 50+ countries with <br />distributed AI infrastructure.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Our Location</h2>
+            <p className="text-slate-500 font-medium">Jaipur, Rajasthan, India <br />Serving patients globally with distributed AI infrastructure.</p>
           </div>
         </div>
       </section>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Loader2, Minimize2, Maximize2, Terminal, ChevronRight, Sparkles, Zap, Volume2, VolumeX } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { generateAIResponse, generateSpeech } from '../lib/ai';
 

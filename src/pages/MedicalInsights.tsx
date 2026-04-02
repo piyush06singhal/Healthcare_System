@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Search, Globe, Loader2, ArrowRight, Shield, ExternalLink } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function MedicalInsights() {
   const [query, setQuery] = useState('');

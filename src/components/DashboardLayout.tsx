@@ -15,9 +15,15 @@ import {
   ChevronRight,
   Sparkles,
   MessageSquare,
-  Shield
+  Shield,
+  Clock,
+  Users,
+  Video,
+  Pill,
+  Brain,
+  ClipboardList
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { logout } from '../store/authSlice';
@@ -33,7 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const menuItems = [
+  const patientMenuItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Overview', path: '/dashboard' },
     { icon: <Calendar className="w-5 h-5" />, label: 'Appointments', path: '/dashboard/appointments' },
     { icon: <FileText className="w-5 h-5" />, label: 'Medical Records', path: '/dashboard/records' },
@@ -41,6 +47,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: <MessageSquare className="w-5 h-5" />, label: 'AI Assistant', path: '/dashboard/ai-chat' },
     { icon: <User className="w-5 h-5" />, label: 'Profile', path: '/dashboard/profile' },
   ];
+
+  const doctorMenuItems = [
+    { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Overview', path: '/dashboard' },
+    { icon: <Calendar className="w-5 h-5" />, label: 'Patient Queue', path: '/dashboard/appointments' },
+    { icon: <Clock className="w-5 h-5" />, label: 'My Schedule', path: '/dashboard/schedule' },
+    { icon: <Users className="w-5 h-5" />, label: 'My Patients', path: '/dashboard/patients' },
+    { icon: <Video className="w-5 h-5" />, label: 'Video Consultation', path: '/dashboard/video-consultation' },
+    { icon: <Pill className="w-5 h-5" />, label: 'Prescriptions', path: '/dashboard/prescriptions' },
+    { icon: <ClipboardList className="w-5 h-5" />, label: 'Pharmacy Dashboard', path: '/dashboard/pharmacy' },
+    { icon: <Bell className="w-5 h-5" />, label: 'Notifications', path: '/dashboard/notifications' },
+    { icon: <Brain className="w-5 h-5" />, label: 'AI Diagnostics', path: '/dashboard/diagnostics' },
+    { icon: <Activity className="w-5 h-5" />, label: 'Clinical Insights', path: '/dashboard/insights' },
+    { icon: <Sparkles className="w-5 h-5" />, label: 'AI Video Gen', path: '/dashboard/video-gen' },
+    { icon: <MessageSquare className="w-5 h-5" />, label: 'AI Assistant', path: '/dashboard/ai-chat' },
+    { icon: <User className="w-5 h-5" />, label: 'Profile', path: '/dashboard/profile' },
+  ];
+
+  const menuItems = user?.role === 'doctor' ? doctorMenuItems : patientMenuItems;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -205,7 +229,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-xl group-hover:scale-105 transition-transform ring-2 ring-blue-50">
                 <img 
-                  src={`https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=100`} 
+                  src={user?.role === 'doctor' 
+                    ? "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=100"
+                    : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100"
+                  } 
                   className="w-full h-full object-cover" 
                   alt="Avatar"
                   referrerPolicy="no-referrer"
@@ -216,12 +243,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar bg-slate-50/50 flex flex-col">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="max-w-7xl mx-auto"
+            className="max-w-full w-full mx-auto flex-1 flex flex-col"
           >
             {children}
           </motion.div>

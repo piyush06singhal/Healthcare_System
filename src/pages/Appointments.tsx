@@ -3,7 +3,7 @@ import { Calendar as CalendarIcon, Clock, User, Phone, Check, X, Search, Filter,
 import { supabase } from '../lib/supabase';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { 
   format, 

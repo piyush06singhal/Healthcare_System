@@ -1,18 +1,23 @@
 import { useState, useRef } from 'react';
-import { Calculator, Scale, Ruler, Flame, Heart, ChevronRight, Activity, Zap, Info, TrendingUp } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
+import { Calculator, Scale, Ruler, Flame, Heart, ChevronRight, Activity, Zap, Info, TrendingUp, Droplets } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 
 export default function HealthCalculators() {
   const [bmi, setBmi] = useState<{ value: number; category: string } | null>(null);
   const [bmr, setBmr] = useState<number | null>(null);
+  const [ibw, setIbw] = useState<number | null>(null);
+  const [water, setWater] = useState<number | null>(null);
   
   // BMI State
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
 
-  // BMR State
+  // BMR & IBW State
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('male');
+
+  // Water State
+  const [activityLevel, setActivityLevel] = useState('sedentary');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -46,6 +51,31 @@ export default function HealthCalculators() {
         val = 10 * w + 6.25 * h - 5 * a - 161;
       }
       setBmr(Math.round(val));
+    }
+  };
+
+  const calculateIBW = () => {
+    const h = parseFloat(height);
+    if (h) {
+      const heightInInches = h / 2.54;
+      const inchesOver5Feet = Math.max(0, heightInInches - 60);
+      let val = 0;
+      if (gender === 'male') {
+        val = 50 + (2.3 * inchesOver5Feet);
+      } else {
+        val = 45.5 + (2.3 * inchesOver5Feet);
+      }
+      setIbw(Math.round(val));
+    }
+  };
+
+  const calculateWater = () => {
+    const w = parseFloat(weight);
+    if (w) {
+      let base = w * 35; // 35ml per kg
+      if (activityLevel === 'active') base += 500;
+      if (activityLevel === 'very_active') base += 1000;
+      setWater(Math.round(base));
     }
   };
 
@@ -247,6 +277,149 @@ export default function HealthCalculators() {
                     <TrendingUp className="w-4 h-4 text-orange-500" />
                     Basal Metabolic Requirement
                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* IBW Calculator */}
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="card p-10 space-y-10 relative overflow-hidden group"
+        >
+          <motion.div 
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, 100]) }}
+            className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-1000"
+          ></motion.div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+              <Scale className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Ideal Weight</h3>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Devine Formula</p>
+            </div>
+          </div>
+          
+          <div className="space-y-8 relative z-10">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Height (cm)</label>
+              <div className="relative group/input">
+                <Ruler className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within/input:text-emerald-600 transition-colors" />
+                <input 
+                  type="number" 
+                  className="input-field pl-14" 
+                  placeholder="175"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <button 
+              onClick={calculateIBW} 
+              className="w-full py-5 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 group/btn"
+            >
+              Calculate Ideal Weight
+              <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+            </button>
+            
+            <AnimatePresence>
+              {ibw && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="p-10 bg-slate-50 rounded-[40px] border border-slate-100 text-center space-y-4 relative overflow-hidden"
+                >
+                  <motion.div 
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 origin-left"
+                  ></motion.div>
+                  <div className="text-6xl font-black text-slate-900 tracking-tighter">{ibw} kg</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estimated Ideal Mass</div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Water Intake Calculator */}
+        <motion.div 
+          initial={{ opacity: 0, x: 30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="card p-10 space-y-10 relative overflow-hidden group"
+        >
+          <motion.div 
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, 100]) }}
+            className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/5 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-1000"
+          ></motion.div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+              <Droplets className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Hydration Goal</h3>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Daily Water Intake</p>
+            </div>
+          </div>
+          
+          <div className="space-y-8 relative z-10">
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                <input 
+                  type="number" 
+                  className="input-field" 
+                  placeholder="70"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Activity Level</label>
+                <select 
+                  className="input-field cursor-pointer"
+                  value={activityLevel}
+                  onChange={(e) => setActivityLevel(e.target.value)}
+                >
+                  <option value="sedentary">Sedentary</option>
+                  <option value="active">Active (+30m)</option>
+                  <option value="very_active">Very Active (+1h)</option>
+                </select>
+              </div>
+            </div>
+            
+            <button 
+              onClick={calculateWater} 
+              className="w-full py-5 bg-cyan-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-cyan-700 transition-all shadow-xl shadow-cyan-600/20 group/btn"
+            >
+              Calculate Hydration
+              <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+            </button>
+            
+            <AnimatePresence>
+              {water && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="p-10 bg-slate-50 rounded-[40px] border border-slate-100 text-center space-y-4 relative overflow-hidden"
+                >
+                  <motion.div 
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 origin-left"
+                  ></motion.div>
+                  <div className="text-6xl font-black text-slate-900 tracking-tighter">{water} ml</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Daily Target Volume</div>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -7,6 +7,24 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Fix for polyfills (like formdata-polyfill) trying to overwrite window.fetch
+      (function() {
+        var originalFetch = window.fetch;
+        if (originalFetch) {
+          try {
+            Object.defineProperty(window, 'fetch', {
+              value: originalFetch,
+              writable: true,
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {
+            // If we can't redefine it, we'll just have to hope for the best
+          }
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

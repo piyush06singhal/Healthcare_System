@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { FileText, Download, Eye, Search, Filter, Plus, File, Trash2, ChevronRight, Share2, MoreVertical, Shield, Star, Clock } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 
 export default function MedicalRecords() {
   const [searchQuery, setSearchQuery] = useState('');
