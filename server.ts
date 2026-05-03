@@ -42,6 +42,22 @@ async function startServer() {
       console.log(`User ${socket.id} joined room ${roomId}`);
     });
 
+    // Handle real-time notifications
+    socket.on("send-notification", (data) => {
+      const { userId, notification } = data;
+      // Emit to the specific user's room
+      io.to(userId).emit("new-notification", notification);
+      console.log(`Notification sent to user ${userId}:`, notification.title);
+    });
+
+    // Handle new appointments
+    socket.on("new-appointment", (data) => {
+      const { doctorId, appointment } = data;
+      // Emit to the specific doctor's room
+      io.to(doctorId).emit("appointment-created", appointment);
+      console.log(`New appointment alert sent to doctor ${doctorId}`);
+    });
+
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
     });

@@ -6,7 +6,7 @@ import {
   Thermometer, 
   Droplets, 
   FileText, 
-  History, 
+  History as HistoryIcon, 
   Calendar,
   Download,
   Share2,
@@ -21,7 +21,11 @@ import {
   Shield,
   Lock,
   Eye,
-  Key
+  Key,
+  Sparkles,
+  Upload,
+  Video,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -38,6 +42,9 @@ import {
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 const healthData = [
   { date: '2026-03-25', heartRate: 72, bp: 120, glucose: 95 },
@@ -57,6 +64,8 @@ export default function PatientDetail() {
   const [historySearch, setHistorySearch] = useState('');
   const [activeTab, setActiveTab] = useState('clinical');
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [examData, setExamData] = useState({
     symptoms: '',
     physicalExam: '',
@@ -75,6 +84,30 @@ export default function PatientDetail() {
       fetchPatient();
     }
   }, [id]);
+
+  const generateAiSummary = async () => {
+    if (!patient) return;
+    setIsAiLoading(true);
+    try {
+      const prompt = `As a medical assistant, provide a concise clinical summary for patient ${patient.name}. 
+      Current condition: Type 2 Diabetes. 
+      Recent vitals: HR 72, BP 120/80, Glucose 96. 
+      Clinical history includes blood panel analysis and metformin prescriptions. 
+      Focus on key risks and recommended focus areas for the next consultation. 
+      Keep it professional and clinical.`;
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+      });
+      setAiSummary(response.text || 'No summary generated.');
+    } catch (error) {
+      console.error('AI Summary Error:', error);
+      setAiSummary('Failed to generate clinical summary. Please review records manually.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const fetchPatient = async () => {
     try {
@@ -211,10 +244,51 @@ export default function PatientDetail() {
         </div>
       </div>
 
+      {/* AI Summary Section */}
+      <motion.div 
+        variants={itemVariants}
+        className="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 rounded-[3rem] text-white shadow-2xl shadow-blue-900/20 relative overflow-hidden"
+      >
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                <Sparkles className="w-6 h-6 text-blue-200" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black tracking-tight">Clinical Intelligence Summary</h3>
+                <p className="text-sm text-blue-100 font-medium">AI-generated overview based on longitudinal data</p>
+              </div>
+            </div>
+            <button 
+              onClick={generateAiSummary}
+              disabled={isAiLoading}
+              className="px-6 py-3 bg-white text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-all disabled:opacity-50"
+            >
+              {isAiLoading ? 'Analyzing...' : 'Refresh Analysis'}
+            </button>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+            {aiSummary ? (
+              <p className="text-sm leading-relaxed font-medium text-blue-50">
+                {aiSummary}
+              </p>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs font-black uppercase tracking-widest text-blue-200">Click refresh to generate clinical insights</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+      </motion.div>
+
       {/* Tabs */}
       <div className="flex items-center gap-6 border-b border-slate-100 pb-2">
         {[
           { id: 'clinical', label: 'Clinical Records', icon: Activity },
+          { id: 'timeline', label: 'Interaction Timeline', icon: HistoryIcon },
           { id: 'security', label: 'Security & Access', icon: Shield },
         ].map((tab) => (
           <button
@@ -390,51 +464,78 @@ export default function PatientDetail() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl" />
               </motion.div>
 
-              {/* Recent History */}
+              {/* Upload Section */}
               <motion.div 
                 variants={itemVariants}
                 className="bg-white p-10 rounded-[3rem] shadow-xl shadow-slate-200/50 border border-slate-100"
               >
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                    <History className="w-5 h-5 text-blue-600" />
-                    Clinical History
-                  </h3>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
-                    <input 
-                      type="text"
-                      value={historySearch}
-                      onChange={(e) => setHistorySearch(e.target.value)}
-                      placeholder="Search history..."
-                      className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/10 w-32"
-                    />
+                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-blue-600" />
+                  Upload Documents
+                </h3>
+                <div className="border-2 border-dashed border-slate-200 rounded-[2rem] p-10 text-center hover:border-blue-400 transition-all cursor-pointer group">
+                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-50 transition-colors">
+                    <Plus className="w-6 h-6 text-slate-400 group-hover:text-blue-600" />
+                  </div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Drop files or click to upload</p>
+                  <p className="text-[8px] text-slate-400 mt-2">PDF, JPG, PNG (Max 10MB)</p>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        ) : activeTab === 'timeline' ? (
+          <motion.div 
+            key="timeline"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-white p-10 rounded-[3rem] shadow-xl shadow-slate-200/50 border border-slate-100"
+          >
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Interaction Timeline</h3>
+                <p className="text-sm text-slate-400 font-medium">Chronological record of patient-provider touchpoints</p>
+              </div>
+              <div className="flex gap-3">
+                <button className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">Filter By Date</button>
+                <button className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">Export PDF</button>
+              </div>
+            </div>
+
+            <div className="relative space-y-12 before:absolute before:left-[21px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+              {[
+                { date: 'Today, 10:00 AM', type: 'Consultation', title: 'Video Consultation Session', doctor: 'Dr. Sarah Johnson', status: 'Completed', icon: Video },
+                { date: 'Yesterday, 02:30 PM', type: 'Prescription', title: 'Metformin 500mg Renewal', doctor: 'Dr. Sarah Johnson', status: 'Authorized', icon: FileText },
+                { date: 'Mar 28, 2026', type: 'Lab Result', title: 'HbA1c Blood Panel', doctor: 'Central Lab', status: 'Reviewed', icon: Activity },
+                { date: 'Mar 25, 2026', type: 'Message', title: 'Follow-up regarding diet plan', doctor: 'Dr. Sarah Johnson', status: 'Read', icon: MessageSquare },
+              ].map((item, i) => (
+                <div key={i} className="relative pl-16 group">
+                  <div className="absolute left-0 top-0 w-11 h-11 bg-white border-4 border-slate-50 rounded-2xl flex items-center justify-center z-10 group-hover:border-blue-50 transition-all shadow-sm">
+                    <item.icon className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  </div>
+                  <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 group-hover:bg-white group-hover:shadow-xl group-hover:shadow-slate-200/50 transition-all">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                      <div>
+                        <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">{item.type}</div>
+                        <h4 className="text-lg font-black text-slate-900">{item.title}</h4>
+                      </div>
+                      <div className="px-4 py-1.5 bg-white rounded-full text-[9px] font-black uppercase tracking-widest text-slate-500 border border-slate-100">
+                        {item.status}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3 h-3" />
+                        {item.date}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-3 h-3" />
+                        {item.doctor}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-6">
-                  {filteredHistory.length === 0 ? (
-                    <div className="text-center py-10">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No records found</p>
-                    </div>
-                  ) : (
-                    filteredHistory.map((item, i) => (
-                      <div key={i} className="flex gap-4 group cursor-pointer">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
-                          <FileText className="w-5 h-5 text-slate-400 group-hover:text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">{item.type}</div>
-                          <div className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">{item.title}</div>
-                          <div className="text-[10px] text-slate-400 font-medium mt-1">{item.date} • {item.doctor}</div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <button className="w-full mt-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
-                  View Full History
-                </button>
-              </motion.div>
+              ))}
             </div>
           </motion.div>
         ) : (

@@ -17,14 +17,17 @@ import {
   FileText,
   Mic,
   MicOff,
-  Info
+  Info,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
-import { generateAIResponse } from '../lib/ai';
+import { generateAIResponse, generateSpeech } from '../lib/ai';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -45,7 +48,10 @@ export default function DoctorAIChat() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -53,15 +59,71 @@ export default function DoctorAIChat() {
     }
   }, [messages]);
 
+  const speakText = async (text: string) => {
+    setIsSpeaking(true);
+    try {
+      const base64Audio = await generateSpeech(text);
+      if (base64Audio) {
+        const url = `data:audio/mp3;base64,${base64Audio}`;
+        setAudioUrl(url);
+        if (audioRef.current) {
+          audioRef.current.src = url;
+          audioRef.current.play();
+        }
+      }
+    } catch (error) {
+      console.error('Speech error:', error);
+      toast.error('Neural voice synthesis failed');
+	  setIsSpeaking(false);
+    }
+  };
+
   const toggleListening = () => {
-    setIsListening(!isListening);
-    if (!isListening) {
-      // Simulate speech recognition
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.info('Speech recognition not supported in this browser. Simulating...');
+      setIsListening(true);
       setTimeout(() => {
         setInput('Analyze my schedule for today.');
         setIsListening(false);
+        handleSend('Analyze my schedule for today.');
       }, 2000);
+      return;
     }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.info('Neural audio link active...');
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+      handleSend(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      toast.error('Audio uplink failed: ' + event.error);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   const handleSend = async (overrideInput?: string) => {
@@ -82,6 +144,8 @@ export default function DoctorAIChat() {
         timestamp: new Date() 
       };
       setMessages(prev => [...prev, aiMsg]);
+      // Optional: Speak the first 200 chars of the AI response
+      if (reply) speakText(reply.substring(0, 200).replace(/[#*`]/g, ''));
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg: Message = { 
@@ -279,7 +343,22 @@ export default function DoctorAIChat() {
           </div>
 
           <div className="p-10 bg-white border-t border-slate-100">
+            <audio ref={audioRef} onEnded={() => setIsSpeaking(false)} className="hidden" />
             <div className="flex items-center gap-6 max-w-5xl mx-auto">
+              {isSpeaking && (
+                <button 
+                  onClick={() => {
+                    if (audioRef.current) {
+                      audioRef.current.pause();
+                      setIsSpeaking(false);
+                    }
+                  }}
+                  className="p-4 bg-rose-50 text-rose-600 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest animate-pulse"
+                >
+                  <VolumeX className="w-4 h-4" />
+                  Mute Voice
+                </button>
+              )}
               <div className="flex-1 relative group">
                 <input
                   type="text"

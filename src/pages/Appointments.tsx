@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, Clock, User, Phone, Check, X, Search, Filter,
 import { supabase } from '../lib/supabase';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { useNotifications } from '../contexts/NotificationContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { 
@@ -49,6 +50,7 @@ export default function Appointments() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [fetchingSlots, setFetchingSlots] = useState(false);
   const { user } = useSelector((state: RootState) => state.auth);
+  const { socket } = useNotifications();
 
   useEffect(() => {
     fetchAppointments();
@@ -123,7 +125,7 @@ export default function Appointments() {
         return;
       }
 
-      const { error } = await supabase
+      const { data: newApt, error } = await supabase
         .from('appointments')
         .insert({
           patient_id: user?.id,
@@ -131,9 +133,22 @@ export default function Appointments() {
           appointment_date: appointmentDate.toISOString(),
           reason: bookingData.reason,
           status: 'pending'
-        });
+        })
+        .select(`
+          *,
+          patient:users!patient_id(id, name, email)
+        `)
+        .single();
 
       if (error) throw error;
+      
+      // Emit real-time notification to the doctor
+      if (socket && newApt) {
+        socket.emit('new-appointment', {
+          doctorId: bookingData.doctor_id,
+          appointment: newApt
+        });
+      }
       
       toast.success('Appointment booked successfully!', {
         description: 'The doctor will review your request shortly.',

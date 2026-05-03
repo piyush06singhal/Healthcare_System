@@ -70,17 +70,46 @@ export default function LoginPage() {
     setLoading(true);
     try {
       // Mock credentials for testing
-      if (email === 'doctor@mediflow.ai' || (email === 'doctor@mediflow.com' && password === 'password123' && role === 'doctor')) {
+      if (
+        (email === 'doctor@mediflow.ai' || email === 'doctor@mediflow.com' || email === 'doctor@example.com') && 
+        password === 'password123' && 
+        role === 'doctor'
+      ) {
         dispatch(setCredentials({
           user: {
-            id: 'mock-doctor-id',
+            id: 'f6f6f6f6-f6f6-4f6f-bf6f-f6f6f6f6f6f6',
             name: 'Dr. Piyush Singhal',
             email: email,
             role: 'doctor'
           },
           token: 'mock-jwt-token'
         }));
-        toast.success(`Neural Link Established. Welcome, Dr. Singhal`);
+        toast.success(`Neural Link Established. Welcome, Dr. Singhal`, {
+          description: 'Systems synchronized. Accessing Clinical Portal...',
+          duration: 3000,
+        });
+        navigate('/dashboard');
+        return;
+      }
+
+      if (
+        (email === 'patient@mediflow.com' || email === 'patient@example.com') && 
+        password === 'password123' && 
+        role === 'patient'
+      ) {
+        dispatch(setCredentials({
+          user: {
+            id: 'mock-patient-id',
+            name: 'John Doe',
+            email: email,
+            role: 'patient'
+          },
+          token: 'mock-jwt-token'
+        }));
+        toast.success(`Welcome back, John`, {
+          description: 'Accessing your personal health portal...',
+          duration: 3000,
+        });
         navigate('/dashboard');
         return;
       }

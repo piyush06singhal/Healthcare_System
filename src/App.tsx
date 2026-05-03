@@ -29,6 +29,7 @@ import MedicalRecords from './pages/MedicalRecords';
 import MedicalInsights from './pages/MedicalInsights';
 import VideoGeneration from './pages/VideoGeneration';
 import DoctorAIChat from './pages/DoctorAIChat';
+import DoctorAIWorkbench from './pages/DoctorAIWorkbench';
 import DoctorPrescriptions from './pages/DoctorPrescriptions';
 import DoctorNotifications from './pages/DoctorNotifications';
 import DoctorDiagnostics from './pages/DoctorDiagnostics';
@@ -44,6 +45,7 @@ import HelpCenter from './pages/HelpCenter';
 import DashboardLayout from './components/DashboardLayout';
 import Chatbot from './components/Chatbot';
 import ErrorBoundary from './components/ErrorBoundary';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from 'sonner';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -74,6 +76,7 @@ const DashboardRoutes = () => {
         <Route path="prescriptions" element={isDoctor ? <DoctorPrescriptions /> : <Navigate to="/dashboard" replace />} />
         <Route path="pharmacy" element={isDoctor ? <PharmacyDashboard /> : <Navigate to="/dashboard" replace />} />
         <Route path="notifications" element={isDoctor ? <DoctorNotifications /> : <Navigate to="/dashboard" replace />} />
+        <Route path="ai-workbench" element={isDoctor ? <DoctorAIWorkbench /> : <Navigate to="/dashboard" replace />} />
         <Route path="diagnostics" element={isDoctor ? <DoctorDiagnostics /> : <Navigate to="/dashboard" replace />} />
         <Route path="insights" element={isDoctor ? <DoctorInsights /> : <Navigate to="/dashboard" replace />} />
         <Route path="ai-chat" element={isDoctor ? <DoctorAIChat /> : <PatientAIChat />} />
@@ -90,7 +93,8 @@ const DashboardRoutes = () => {
 export default function App() {
   return (
     <Provider store={store}>
-      <ErrorBoundary>
+      <NotificationProvider>
+        <ErrorBoundary>
         <Router>
           <div className="min-h-screen flex flex-col">
             <Routes>
@@ -120,6 +124,7 @@ export default function App() {
           </div>
         </Router>
       </ErrorBoundary>
+      </NotificationProvider>
     </Provider>
   );
 }

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Heart, LogOut, Shield, Activity, ChevronDown, Globe, Phone, Search, Bell, Clock } from 'lucide-react';
+import { Menu, X, Heart, LogOut, Shield, Activity, ChevronDown, Globe, Phone, Search, Bell, Clock, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { logout } from '../store/authSlice';
+import { useNotifications } from '../contexts/NotificationContext';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,23 +14,15 @@ export default function Navbar() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const location = useLocation();
+  const { notifications, unreadCount, markAsRead, clearAll } = useNotifications();
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Appointment Reminder', desc: 'Your session with Dr. Sarah starts in 30 mins', time: 'Just now', type: 'reminder' },
-    { id: 2, title: 'New Message', desc: 'Dr. Michael sent you a follow-up note', time: '2h ago', type: 'message' },
-    { id: 3, title: 'Health Update', desc: 'Your blood test results are now available', time: '5h ago', type: 'update' },
-  ]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const markAsRead = (id: number) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -139,7 +132,9 @@ export default function Navbar() {
                   className={`w-10 h-10 flex items-center justify-center transition-all relative rounded-xl border border-white/50 ${showNotifications ? 'bg-slate-900 text-white shadow-lg' : 'bg-white/50 text-slate-500 hover:text-slate-900'}`}
                 >
                   <Bell className="w-4 h-4" />
-                  <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full border border-white"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
+                  )}
                 </button>
 
                 <AnimatePresence>
@@ -153,7 +148,7 @@ export default function Navbar() {
                       <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Telemetry Feed</h3>
                         <button 
-                          onClick={() => setNotifications([])}
+                          onClick={clearAll}
                           className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
                         >
                           Purge All
@@ -169,15 +164,19 @@ export default function Navbar() {
                             >
                               <div className="flex gap-5">
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
-                                  notif.type === 'reminder' ? 'bg-blue-50 text-blue-600' :
-                                  notif.type === 'message' ? 'bg-emerald-50 text-emerald-600' : 'bg-purple-50 text-purple-600'
+                                  notif.type === 'urgent' ? 'bg-rose-50 text-rose-600' :
+                                  notif.type === 'success' ? 'bg-emerald-50 text-emerald-600' :
+                                  notif.type === 'reminder' ? 'bg-amber-50 text-amber-600' :
+                                  'bg-blue-50 text-blue-600'
                                 }`}>
-                                  {notif.type === 'reminder' ? <Clock className="w-5 h-5" /> :
-                                   notif.type === 'message' ? <Phone className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
+                                  {notif.type === 'urgent' ? <AlertCircle className="w-5 h-5" /> :
+                                   notif.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> :
+                                   notif.type === 'reminder' ? <Clock className="w-5 h-5" /> :
+                                   <Info className="w-5 h-5" />}
                                 </div>
                                 <div className="space-y-1.5">
                                   <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{notif.title}</div>
-                                  <p className="text-[10px] font-bold text-slate-500 leading-relaxed">{notif.desc}</p>
+                                  <p className="text-[10px] font-bold text-slate-500 leading-relaxed">{notif.message}</p>
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest pt-1">{notif.time}</div>
                                 </div>
                               </div>

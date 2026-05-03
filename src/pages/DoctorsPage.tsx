@@ -1,7 +1,11 @@
-import { Search, Filter, Star, MapPin, Calendar, ArrowRight, CheckCircle2, Heart, Shield, Users, ChevronRight, X, Clock, Activity, Phone, Award, BookOpen } from 'lucide-react';
+import { Search, Filter, Star, MapPin, Calendar, ArrowRight, CheckCircle2, Heart, Shield, Users, ChevronRight, X, Clock, Activity, Phone, Award, BookOpen, Loader2 } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'motion/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { useNotifications } from '../contexts/NotificationContext';
+import { supabase } from '../lib/supabase';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -99,6 +103,54 @@ export default function DoctorsPage() {
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { socket } = useNotifications();
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  const handleBookAppointment = async (doctor: any) => {
+    if (!user) {
+      toast.error("Please login to book an appointment");
+      return;
+    }
+
+    setBookingLoading(true);
+    try {
+      const { data: newApt, error } = await supabase
+        .from('appointments')
+        .insert({
+          patient_id: user.id,
+          doctor_id: doctor.id || 'f6f6f6f6-f6f6-4f6f-bf6f-f6f6f6f6f6f6', // Fallback for hardcoded docs
+          appointment_date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+          reason: 'General Consultation requested from Specialists directory.',
+          status: 'pending'
+        })
+        .select(`
+          *,
+          patient:users!patient_id(id, name, email)
+        `)
+        .single();
+      
+      if (error) throw error;
+
+      // Emit event for real-time doctor dashboard update
+      if (socket) {
+        socket.emit('new-appointment', { 
+          doctorId: doctor.id || 'f6f6f6f6-f6f6-4f6f-bf6f-f6f6f6f6f6f6',
+          appointment: newApt
+        });
+      }
+
+      toast.success(`Request sent to ${doctor.name}`, {
+        description: "The doctor will review your request and you'll be notified of the status."
+      });
+      setSelectedDoctor(null);
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      toast.error("Failed to process booking request");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
 
   const categories = ["All", "Cardiologist", "Neurologist", "Pediatrician", "Dermatologist", "Psychiatrist", "Orthopedic"];
 
@@ -529,9 +581,17 @@ export default function DoctorsPage() {
                   </div>
 
                   <div className="flex items-center gap-4 pt-6">
-                    <button className="flex-1 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-3">
-                      Book Appointment
-                      <ArrowRight className="w-4 h-4" />
+                    <button 
+                      onClick={() => handleBookAppointment(selectedDoctor)}
+                      disabled={bookingLoading}
+                      className="flex-1 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                      {bookingLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                        <>
+                          Book Appointment
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
                     </button>
                     <button className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 transition-all">
                       <Heart className="w-6 h-6" />

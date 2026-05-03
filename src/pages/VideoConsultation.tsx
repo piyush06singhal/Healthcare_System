@@ -1,10 +1,12 @@
-import { Phone, Video, X, Mic, MicOff, VideoOff, Monitor, Settings, MessageSquare, Users, Shield, Clock, FileText, Plus, Send } from 'lucide-react';
+import { Phone, Video, X, Mic, MicOff, VideoOff, Monitor, Settings, MessageSquare, Users, Shield, Clock, FileText, Plus, Send, MonitorOff, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'sonner';
+import Peer from 'simple-peer';
+import { io, Socket } from 'socket.io-client';
 
 export default function VideoConsultation() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function VideoConsultation() {
   const [isJoined, setIsJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -21,22 +24,162 @@ export default function VideoConsultation() {
   ]);
   const [newMessage, setNewMessage] = useState('');
   const [clinicalNotes, setClinicalNotes] = useState('');
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [peer, setPeer] = useState<Peer.Instance | null>(null);
+
+  const myVideo = useRef<HTMLVideoElement>(null);
+  const remoteVideo = useRef<HTMLVideoElement>(null);
+
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+
+  const requestMedia = async () => {
+    try {
+      setPermissionError(null);
+      const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setStream(currentStream);
+      if (myVideo.current) {
+        myVideo.current.srcObject = currentStream;
+      }
+    } catch (err: any) {
+      console.error("Error accessing media devices:", err);
+      setPermissionError(err.name === 'NotAllowedError' ? 'Permission Denied' : 'Hardware Error');
+      toast.error(err.name === 'NotAllowedError' ? "Permission denied. Please allow access in browser settings." : "Hardware error. Please check your camera/mic.");
+    }
+  };
 
   useEffect(() => {
-    if (isJoined && !isVideoOff) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch(err => {
-          console.error("Error accessing media devices:", err);
-          toast.error("Could not access camera/microphone");
-        });
+    const newSocket = io(window.location.origin);
+    setSocket(newSocket);
+
+    requestMedia();
+
+    return () => {
+      newSocket.close();
+      stream?.getTracks().forEach(track => track.stop());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (socket && user?.id) {
+      socket.emit('join-room', 'consultation-room'); // In a real app, this would be a specific appointment ID
+
+      socket.on('user-connected', (userId) => {
+        if (isJoined) {
+          callUser(userId);
+        }
+      });
+
+      socket.on('receiving-signal', (data) => {
+        if (isJoined) {
+          acceptCall(data);
+        }
+      });
+
+      socket.on('call-accepted', (signal) => {
+        peer?.signal(signal);
+      });
     }
-  }, [isJoined, isVideoOff]);
+  }, [socket, isJoined, peer]);
+
+  const callUser = (id: string) => {
+    const newPeer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream: stream!,
+    });
+
+    newPeer.on('signal', (data) => {
+      socket?.emit('call-user', { userToCall: id, signalData: data, from: user?.id });
+    });
+
+    newPeer.on('stream', (remoteStream) => {
+      setRemoteStream(remoteStream);
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = remoteStream;
+      }
+    });
+
+    setPeer(newPeer);
+  };
+
+  const acceptCall = (data: any) => {
+    const newPeer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream: stream!,
+    });
+
+    newPeer.on('signal', (signal) => {
+      socket?.emit('answer-call', { signal, to: data.from });
+    });
+
+    newPeer.on('stream', (remoteStream) => {
+      setRemoteStream(remoteStream);
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = remoteStream;
+      }
+    });
+
+    newPeer.signal(data.signal);
+    setPeer(newPeer);
+  };
+
+  const toggleMute = () => {
+    if (stream) {
+      stream.getAudioTracks()[0].enabled = isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const toggleVideo = () => {
+    if (stream) {
+      stream.getVideoTracks()[0].enabled = isVideoOff;
+      setIsVideoOff(!isVideoOff);
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    try {
+      if (!isScreenSharing) {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        if (peer) {
+          peer.replaceTrack(
+            stream!.getVideoTracks()[0],
+            screenStream.getVideoTracks()[0],
+            stream!
+          );
+        }
+        if (myVideo.current) {
+          myVideo.current.srcObject = screenStream;
+        }
+        setIsScreenSharing(true);
+        
+        screenStream.getVideoTracks()[0].onended = () => {
+          stopScreenShare();
+        };
+      } else {
+        stopScreenShare();
+      }
+    } catch (err) {
+      console.error("Error sharing screen:", err);
+    }
+  };
+
+  const stopScreenShare = () => {
+    if (peer && stream) {
+      peer.replaceTrack(
+        peer.streams[0].getVideoTracks()[0],
+        stream.getVideoTracks()[0],
+        stream
+      );
+    }
+    if (myVideo.current) {
+      myVideo.current.srcObject = stream;
+    }
+    setIsScreenSharing(false);
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,18 +214,30 @@ export default function VideoConsultation() {
               </div>
               
               <div className="flex items-center justify-center gap-4">
-                <button 
-                  onClick={() => setIsMuted(!isMuted)}
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                >
-                  {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                </button>
-                <button 
-                  onClick={() => setIsVideoOff(!isVideoOff)}
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isVideoOff ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                >
-                  {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
-                </button>
+                {permissionError ? (
+                  <button 
+                    onClick={requestMedia}
+                    className="flex flex-col items-center gap-2 p-4 bg-rose-600/10 text-rose-500 rounded-2xl border border-rose-500/20 hover:bg-rose-600/20 transition-all group"
+                  >
+                    <AlertTriangle className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">{permissionError} - Retry</span>
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={toggleMute}
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    >
+                      {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                    </button>
+                    <button 
+                      onClick={toggleVideo}
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isVideoOff ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    >
+                      {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-4">
@@ -110,15 +265,21 @@ export default function VideoConsultation() {
             <div className="flex-1 relative bg-slate-800 rounded-[3rem] overflow-hidden border border-slate-700 shadow-2xl group">
               {/* Remote Video */}
               <div className="absolute inset-0 bg-slate-700 flex items-center justify-center">
-                <img 
-                  src={isDoctor 
-                    ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=1200"
-                    : "https://images.unsplash.com/photo-1559839734-2b71f1536780?auto=format&fit=crop&q=80&w=1200"
-                  } 
-                  className="w-full h-full object-cover opacity-80" 
-                  alt="Remote Participant"
-                  referrerPolicy="no-referrer"
-                />
+                {remoteStream ? (
+                  <video 
+                    ref={remoteVideo} 
+                    autoPlay 
+                    playsInline 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="text-center space-y-4">
+                    <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                      <Users className="w-10 h-10 text-slate-600" />
+                    </div>
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Waiting for participant...</p>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
                 <div className="absolute bottom-8 left-8 flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -143,7 +304,7 @@ export default function VideoConsultation() {
               >
                 {!isVideoOff ? (
                   <video 
-                    ref={videoRef} 
+                    ref={myVideo} 
                     autoPlay 
                     muted 
                     playsInline 
@@ -162,20 +323,23 @@ export default function VideoConsultation() {
               {/* Controls Overlay */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-8 py-4 bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-500">
                 <button 
-                  onClick={() => setIsMuted(!isMuted)}
+                  onClick={toggleMute}
                   className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isMuted ? 'bg-rose-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
                 >
                   {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
                 <button 
-                  onClick={() => setIsVideoOff(!isVideoOff)}
+                  onClick={toggleVideo}
                   className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isVideoOff ? 'bg-rose-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
                 >
                   {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
                 </button>
                 <div className="w-px h-8 bg-white/10 mx-2" />
-                <button className="w-12 h-12 rounded-xl bg-white/10 text-white hover:bg-white/20 flex items-center justify-center transition-all">
-                  <Monitor className="w-5 h-5" />
+                <button 
+                  onClick={toggleScreenShare}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isScreenSharing ? 'bg-blue-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                >
+                  {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
                 </button>
                 <button 
                   onClick={() => setIsChatOpen(!isChatOpen)}

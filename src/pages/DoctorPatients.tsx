@@ -95,7 +95,7 @@ export default function DoctorPatients() {
     >
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
         <div className="space-y-4">
-          <h1 className="text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none">Active Patients</h1>
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none">Active Patients</h1>
           <p className="text-slate-500 font-medium text-xl max-w-xl leading-relaxed">Directory of patients under your clinical care. Manage records and monitor health scores in real-time.</p>
         </div>
         <div className="flex flex-col md:flex-row md:items-center gap-6">

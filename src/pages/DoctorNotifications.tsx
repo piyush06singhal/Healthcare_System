@@ -10,61 +10,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo } from 'react';
-
-interface Notification {
-  id: string;
-  type: 'urgent' | 'success' | 'info' | 'reminder';
-  title: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-}
-
-const initialNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'urgent',
-    title: 'Critical Lab Result',
-    message: 'Patient Piyush Singhal (ID: 8273) has a critical potassium level of 6.2 mEq/L. Immediate intervention required.',
-    time: '2 mins ago',
-    isRead: false,
-  },
-  {
-    id: '2',
-    type: 'reminder',
-    title: 'Upcoming Consultation',
-    message: 'Video call with Sarah Mitchell starts in 15 minutes. Review clinical history before joining.',
-    time: '12 mins ago',
-    isRead: false,
-  },
-  {
-    id: '3',
-    type: 'success',
-    title: 'Prescription Authorized',
-    message: 'The digital prescription for John Doe has been successfully transmitted to the pharmacy.',
-    time: '1 hour ago',
-    isRead: true,
-  },
-  {
-    id: '4',
-    type: 'info',
-    title: 'System Update',
-    message: 'Neural Link v2.5.1 has been deployed. New AI diagnostic models are now available for testing.',
-    time: '3 hours ago',
-    isRead: true,
-  },
-  {
-    id: '5',
-    type: 'reminder',
-    title: 'Documentation Pending',
-    message: 'You have 4 patient records from yesterday awaiting final signature and clinical coding.',
-    time: '5 hours ago',
-    isRead: true,
-  },
-];
+import { useNotifications } from '../contexts/NotificationContext';
 
 export default function DoctorNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const { notifications, markAsRead, deleteNotification, clearAll } = useNotifications();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'urgent'>('all');
 
@@ -75,18 +24,6 @@ export default function DoctorNotifications() {
       return matchesSearch && matchesFilter;
     });
   }, [notifications, search, filter]);
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
