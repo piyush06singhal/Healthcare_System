@@ -23,10 +23,6 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === 'doctor' && authStep === 'input') {
-      setAuthStep('biometric');
-      return;
-    }
     
     setLoading(true);
     setError('');
@@ -50,8 +46,8 @@ export default function RegisterPage() {
 
       // If email confirmation is required, session will be null
       if (authData.user && !authData.session) {
-        toast.success('Registration Initiated', {
-          description: 'A verification link has been sent to your terminal. Please confirm your email to activate your neural identity.',
+        toast.success('Registration Successful', {
+          description: 'A verification link has been sent to your email. Please confirm your email to activate your account.',
           duration: 10000,
         });
         navigate('/login');
@@ -80,129 +76,23 @@ export default function RegisterPage() {
           token: authData.session.access_token
         }));
         
-        toast.success('Neural Link Established', {
-          description: `Welcome back, ${finalName}. Your clinical terminal is online.`
+        toast.success('Welcome to MediFlow', {
+          description: `Account created successfully. Welcome, ${finalName}.`
         });
         navigate('/dashboard');
       }
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message || 'Failed to create account. Please try again.');
-      setAuthStep('input');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (authStep === 'biometric') {
-      const interval = setInterval(() => {
-        setScanProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setAuthStep('verifying');
-            setTimeout(() => {
-              handleRegister({ preventDefault: () => {} } as any);
-            }, 1500);
-            return 100;
-          }
-          return prev + 2;
-        });
-      }, 50);
-      return () => clearInterval(interval);
-    }
-  }, [authStep]);
-
-  if (role === 'doctor' && authStep !== 'input') {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 overflow-hidden relative">
-        {/* Advanced Background */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse delay-700"></div>
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-        </div>
-
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="max-w-md w-full bg-white/5 border border-white/10 rounded-[3rem] p-12 text-center space-y-10 backdrop-blur-2xl relative z-10 shadow-2xl"
-        >
-          <AnimatePresence mode="wait">
-            {authStep === 'biometric' ? (
-              <motion.div 
-                key="biometric"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-10"
-              >
-                <div className="relative w-40 h-40 mx-auto">
-                  <svg className="w-full h-full rotate-[-90deg]">
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      className="text-white/5"
-                    />
-                    <motion.circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      strokeDasharray={440}
-                      strokeDashoffset={440 - (440 * scanProgress) / 100}
-                      className="text-blue-500"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-24 h-24 bg-blue-600/20 rounded-full flex items-center justify-center relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-gradient-to-t from-blue-500/40 to-transparent animate-scan"></div>
-                      <Stethoscope className="w-12 h-12 text-blue-400 relative z-10" />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Identity Verification</h2>
-                  <p className="text-slate-400 font-medium tracking-wide">Initializing Neural Biometric Scan...</p>
-                </div>
-                <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                  <span>Scanning...</span>
-                  <span>{scanProgress}%</span>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="verifying"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-10 py-10"
-              >
-                <div className="w-24 h-24 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto animate-bounce">
-                  <Loader2 className="w-12 h-12 animate-spin" />
-                </div>
-                <div className="space-y-3">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Finalizing Credentials</h2>
-                  <p className="text-slate-400 font-medium tracking-wide">Establishing Secure Clinical Access...</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <AuthLayout 
       title={role === 'doctor' ? "Doctor Registration" : "Patient Registration"} 
-      subtitle={role === 'doctor' ? "Join our network of elite medical professionals." : "Start your journey towards better health management."}
+      subtitle={role === 'doctor' ? "Join our network of healthcare professionals." : "Access personalized healthcare services and insights."}
     >
       <div className={`flex p-1 rounded-2xl mb-8 transition-colors ${role === 'doctor' ? 'bg-slate-900' : 'bg-slate-100'}`}>
         <button

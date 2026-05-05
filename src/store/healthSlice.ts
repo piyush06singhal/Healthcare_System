@@ -36,9 +36,16 @@ interface Appointment {
     name: string;
     specialty: string;
   };
+  patient?: {
+    id: string;
+    name: string;
+  };
+  patient_id?: string;
+  doctor_id?: string;
   appointment_date: string;
-  status: 'pending' | 'accepted' | 'declined';
+  status: 'pending' | 'accepted' | 'declined' | 'completed';
   reason: string;
+  priority?: 'low' | 'medium' | 'urgent' | 'critical';
 }
 
 interface Notification {

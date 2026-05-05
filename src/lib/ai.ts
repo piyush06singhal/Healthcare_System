@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 
 // Initialize the AI client lazily

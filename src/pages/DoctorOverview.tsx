@@ -23,13 +23,14 @@ import {
   Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useNotifications } from '../contexts/NotificationContext';
+import { supabase } from '../lib/supabase';
 import { 
   AreaChart, 
   Area, 

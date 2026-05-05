@@ -44,15 +44,15 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">System Interrupted</h1>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">System Error</h1>
               <p className="text-slate-500 font-medium leading-relaxed">
-                An unexpected anomaly has been detected in the clinical core. Telemetry has been dispatched.
+                An unexpected error has occurred. Our team has been notified.
               </p>
               {this.state.error && (
                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-left overflow-hidden">
-                  <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2">Error Diagnostic</p>
+                  <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2">Error Details</p>
                   <p className="text-[10px] font-mono text-slate-400 break-all leading-tight">
-                    {this.state.error.message || 'Unknown clinical exception'}
+                    {this.state.error.message || 'Unknown exception'}
                   </p>
                 </div>
               )}
@@ -64,14 +64,14 @@ class ErrorBoundary extends Component<Props, State> {
                 className="flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
               >
                 <RefreshCcw className="w-4 h-4" />
-                Reload
+                Reload Page
               </button>
               <button
                 onClick={() => window.location.href = '/'}
                 className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 active:scale-95"
               >
                 <Home className="w-4 h-4" />
-                Terminal
+                Home
               </button>
             </div>
           </motion.div>

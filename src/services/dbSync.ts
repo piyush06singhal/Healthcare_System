@@ -66,7 +66,7 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
       dispatch(addMessage({
         id: payload.new.id,
         text: payload.new.content,
-        sender: payload.new.sender_id === userId ? 'user' : (isDoctor ? 'patient' : 'doctor'),
+        sender: payload.new.sender_id === userId ? (isDoctor ? 'doctor' : 'patient') : (isDoctor ? 'patient' : 'doctor'),
         timestamp: payload.new.created_at
       }));
       

@@ -61,6 +61,16 @@ export default function DoctorAppointments() {
 
   const navigate = useNavigate();
 
+  const fetchAppointments = async () => {
+    // In a real app, this would refresh the data from the server
+    // For now, it represents the trigger for a data sync
+    console.log('Refreshing appointments queue...');
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
   const filteredQueue = useMemo(() => {
     let result = appointments.filter(apt => {
       const name = apt.patient?.name || '';
