@@ -50,12 +50,13 @@ import {
   LineChart,
   Line
 } from 'recharts';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import HealthCorrelationViz from '../components/HealthCorrelationViz';
 
 const biometricData = [
   { time: '00:00', heartRate: 68, bloodOxygen: 98, sleep: 0 },
@@ -139,14 +140,18 @@ const quickActions = [
 ];
 
 export default function PatientDashboard() {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, activeProfile } = useSelector((state: RootState) => state.auth);
+  const { biometrics, treatments, aiSummary, prescriptions } = useSelector((state: RootState) => state.health);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    setMounted(true);
     if (user?.id) {
       fetchDashboardData();
     }
@@ -256,8 +261,46 @@ export default function PatientDashboard() {
     { id: 'reminder', label: 'Set Med Reminder', icon: <Bell className="w-4 h-4" />, color: 'text-cyan-600', bg: 'bg-cyan-50', action: () => setIsReminderModalOpen(true) },
   ];
 
+  const [isNeuralSyncing, setIsNeuralSyncing] = useState(false);
+
+  useEffect(() => {
+    // Simulate neural sync when profile changes
+    setIsNeuralSyncing(true);
+    const timer = setTimeout(() => setIsNeuralSyncing(false), 2000);
+    return () => clearTimeout(timer);
+  }, [activeProfile?.id]);
+
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-hidden">
+      {/* Neural Sync Overlay */}
+      <AnimatePresence>
+        {isNeuralSyncing && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center pointer-events-none"
+          >
+            <div className="text-center space-y-8">
+              <motion.div 
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 180, 360],
+                  filter: ["blur(0px)", "blur(10px)", "blur(0px)"]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-32 h-32 bg-indigo-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(79,70,229,0.5)] border border-white/20"
+              >
+                <Brain className="w-16 h-16 text-white" />
+              </motion.div>
+              <div>
+                <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Neural Link Syncing</h2>
+                <p className="text-indigo-400 font-black text-xs uppercase tracking-[0.5em] animate-pulse">Accessing {activeProfile?.name || 'Primary'} Records</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Scroll Progress Bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-blue-600 origin-left z-50"
@@ -325,19 +368,19 @@ export default function PatientDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Heart Rate', value: '72', unit: 'bpm', icon: <Heart className="w-6 h-6" />, color: 'text-rose-600', bg: 'bg-rose-50', trend: '+2%', status: 'Normal' },
-          { label: 'Blood Oxygen', value: '98', unit: '%', icon: <Droplets className="w-6 h-6" />, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Stable', status: 'Optimal' },
-          { label: 'Body Temp', value: '36.6', unit: '°C', icon: <Thermometer className="w-6 h-6" />, color: 'text-amber-600', bg: 'bg-amber-50', trend: '-0.1', status: 'Normal' },
-          { label: 'Sleep Score', value: '85', unit: '/100', icon: <Wind className="w-6 h-6" />, color: 'text-purple-600', bg: 'bg-purple-50', trend: '+5', status: 'Good' },
+          { label: 'Heart Rate', value: biometrics.heartRate[biometrics.heartRate.length - 1].value, unit: 'bpm', icon: <Heart className="w-6 h-6" />, color: 'text-rose-600', bg: 'bg-rose-50', trend: '+2%', status: 'Normal' },
+          { label: 'Blood Oxygen', value: biometrics.oxygen, unit: '%', icon: <Droplets className="w-6 h-6" />, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Stable', status: 'Optimal' },
+          { label: 'BP Status', value: biometrics.bloodPressure, unit: 'mmHg', icon: <Activity className="w-6 h-6" />, color: 'text-amber-600', bg: 'bg-amber-50', trend: 'Regulated', status: 'Optimal' },
+          { label: 'Glucose Level', value: biometrics.bloodSugar, unit: 'mg/dL', icon: <Pill className="w-6 h-6" />, color: 'text-purple-600', bg: 'bg-purple-50', trend: 'Synced', status: 'Controlled' },
         ].map((stat, i) => (
           <motion.div
             key={i}
             variants={itemVariants}
-            whileHover={{ y: -8 }}
-            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 relative overflow-hidden group hover:shadow-2xl transition-all"
+            whileHover={{ y: -8, scale: 1.02 }}
+            className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 relative overflow-hidden group hover:shadow-2xl transition-all cursor-pointer"
           >
             <div className="flex justify-between items-start mb-6">
-              <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+              <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform`}>
                 {stat.icon}
               </div>
               <div className={`text-[10px] font-black px-2 py-1 rounded-lg ${stat.trend.includes('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}`}>
@@ -347,53 +390,113 @@ export default function PatientDashboard() {
             <div>
               <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black text-slate-900">{stat.value}</span>
+                <span className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</span>
                 <span className="text-sm font-bold text-slate-400">{stat.unit}</span>
               </div>
               <div className="mt-4 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{stat.status}</span>
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">{stat.status}</span>
               </div>
             </div>
+            <div className={`absolute -right-4 -bottom-4 w-24 h-24 ${stat.bg} opacity-50 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700`} />
           </motion.div>
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-12">
-        {/* Left Column: Charts & Insights */}
-        <div className="lg:col-span-2 space-y-12">
+      <div className="grid lg:grid-cols-4 gap-12">
+        <div className="lg:col-span-3 space-y-12">
+          {/* Digital Health Wallet Card */}
+          <motion.div 
+            variants={itemVariants}
+            className="bg-slate-900 rounded-[3.5rem] p-12 text-white relative overflow-hidden group shadow-2xl shadow-slate-900/20"
+          >
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+              <div className="flex-1 space-y-6">
+                <div>
+                  <div className="px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/20 inline-flex items-center gap-2 mb-4">
+                    <Shield className="w-3 h-3" />
+                    Biometric Identity
+                  </div>
+                  <h2 className="text-4xl font-black tracking-tight leading-tight">Digital Health Wallet</h2>
+                  <p className="text-slate-400 font-medium max-w-md mt-4">
+                    Instant access to your specialized clinical credentials, insurance protocols, and emergency medical ID.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setIsWalletOpen(true)}
+                    className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/10"
+                  >
+                    View ID Card
+                  </button>
+                  <button className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                    Sync Insurance
+                  </button>
+                </div>
+              </div>
+
+              {/* Holographic Card Preview */}
+              <motion.div 
+                whileHover={{ rotateY: 15, rotateX: -10 }}
+                className="w-full max-w-[400px] aspect-[1.6/1] bg-gradient-to-br from-blue-500/20 via-indigo-600/20 to-purple-700/20 backdrop-blur-3xl rounded-3xl border border-white/20 p-8 relative overflow-hidden shadow-2xl shadow-blue-500/30 group/card"
+              >
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div className="flex justify-between items-start">
+                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+                      <Zap className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Mediflow AI</div>
+                      <div className="text-xs font-black text-white italic">Clinical Pass</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2">Patient Primary Identity</div>
+                    <div className="text-xl font-bold tracking-widest mb-1">{user?.name?.toUpperCase() || 'PIYUSH SINGHAL'}</div>
+                    <div className="text-[10px] font-mono text-blue-400 tracking-wider">ID: MF-882-901-VX</div>
+                  </div>
+                </div>
+                <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none group-hover/card:translate-x-full transition-transform duration-1000" />
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl" />
+              </motion.div>
+            </div>
+            <div className="absolute -left-20 -top-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl opacity-50" />
+          </motion.div>
           {/* Suggested Actions Section */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100 overflow-hidden relative"
+            className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100 overflow-hidden relative group/suggest"
           >
             <div className="relative z-10">
-              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-blue-600" />
-                Suggested Next Steps
-              </h3>
-              <div className="flex flex-wrap gap-4">
-                {suggestedActions.map((action) => (
+              <div className="flex items-center justify-between mb-10">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  System Recommendations
+                </h3>
+                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                  Neural Optimized
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {suggestedActions.slice(0, 6).map((action) => (
                   <button
                     key={action.id}
                     onClick={action.action}
-                    className={`flex items-center gap-3 px-6 py-4 ${action.bg} ${action.color} rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-sm border border-transparent hover:border-current`}
+                    className={`flex items-center gap-4 p-5 ${action.bg} ${action.color} rounded-[2.5rem] font-black text-[11px] uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-sm border border-transparent hover:border-current hover:shadow-lg`}
                   >
-                    {action.icon}
-                    {action.label}
+                    <div className="w-10 h-10 rounded-xl bg-white/50 backdrop-blur-md flex items-center justify-center shadow-sm">
+                      {action.icon}
+                    </div>
+                    <span className="flex-1 text-left leading-tight">{action.label}</span>
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
             </div>
-            <div className="absolute top-0 right-0 w-64 h-full opacity-10 pointer-events-none">
-              <img 
-                src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400" 
-                className="w-full h-full object-cover" 
-                alt="Health Illustration"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl pointer-events-none group-hover/suggest:scale-110 transition-transform duration-1000" />
           </motion.div>
 
           {/* Biometric Chart */}
@@ -421,47 +524,49 @@ export default function PatientDashboard() {
               </div>
             </div>
             <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={biometricData}>
-                  <defs>
-                    <linearGradient id="colorHeart" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="time" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
-                    dy={10}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      borderRadius: '20px', 
-                      border: 'none', 
-                      boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                      padding: '15px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="heartRate" 
-                    stroke="#2563eb" 
-                    strokeWidth={4}
-                    fillOpacity={1} 
-                    fill="url(#colorHeart)" 
-                    animationDuration={2000}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {mounted && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={biometricData}>
+                    <defs>
+                      <linearGradient id="colorHeart" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="time" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
+                      dy={10}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        borderRadius: '20px', 
+                        border: 'none', 
+                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                        padding: '15px'
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="heartRate" 
+                      stroke="#2563eb" 
+                      strokeWidth={4}
+                      fillOpacity={1} 
+                      fill="url(#colorHeart)" 
+                      animationDuration={2000}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </motion.div>
 
@@ -477,22 +582,24 @@ export default function PatientDashboard() {
                 Activity Progress
               </h3>
               <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activityData}>
-                    <XAxis 
-                      dataKey="day" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
-                    />
-                    <Tooltip cursor={{ fill: '#f8fafc' }} />
-                    <Bar dataKey="steps" radius={[10, 10, 0, 0]}>
-                      {activityData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.steps >= entry.goal ? '#10b981' : '#e2e8f0'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={activityData}>
+                      <XAxis 
+                        dataKey="day" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
+                      />
+                      <Tooltip cursor={{ fill: '#f8fafc' }} />
+                      <Bar dataKey="steps" radius={[10, 10, 0, 0]}>
+                        {activityData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.steps >= entry.goal ? '#10b981' : '#e2e8f0'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
               <div className="mt-6 flex items-center justify-between">
                 <div className="text-xs font-bold text-slate-500">Weekly Average: <span className="text-slate-900 font-black">9,371 steps</span></div>
@@ -563,54 +670,8 @@ export default function PatientDashboard() {
 
           {/* Health Trends Section */}
           <div className="grid md:grid-cols-2 gap-12">
-            {/* Weight Trend Chart */}
-            <motion.div 
-              variants={itemVariants}
-              className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
-            >
-              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
-                Weight Progression
-              </h3>
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={weightTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="month" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
-                    />
-                    <YAxis 
-                      domain={['dataMin - 5', 'dataMax + 5']}
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        borderRadius: '20px', 
-                        border: 'none', 
-                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                        padding: '15px'
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="weight" 
-                      stroke="#2563eb" 
-                      strokeWidth={4}
-                      dot={{ r: 6, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }}
-                      activeDot={{ r: 8 }}
-                      animationDuration={2000}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
-
+            <HealthCorrelationViz />
+            
             {/* Health Distribution Pie Chart */}
             <motion.div 
               variants={itemVariants}
@@ -622,32 +683,34 @@ export default function PatientDashboard() {
                 Activity Distribution
               </h3>
               <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={healthDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {healthDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        borderRadius: '20px', 
-                        border: 'none', 
-                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                        padding: '15px'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={healthDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {healthDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          borderRadius: '20px', 
+                          border: 'none', 
+                          boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                          padding: '15px'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
               <div className="flex flex-wrap justify-center gap-4 mt-4">
                 {healthDistribution.map((item, i) => (
@@ -710,34 +773,30 @@ export default function PatientDashboard() {
             variants={itemVariants}
             className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-100"
           >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-slate-900">Medications</h3>
-              <Pill className="w-6 h-6 text-purple-600" />
+            <div className="flex items-center justify-between mb-8 cursor-pointer" onClick={() => navigate('/dashboard/prescriptions')}>
+              <h3 className="text-xl font-black text-slate-900">Active Meds</h3>
+              <Pill className="w-6 h-6 text-indigo-600" />
             </div>
             <div className="space-y-4">
-              {medications.map((med, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-purple-200 transition-all">
+              {prescriptions.slice(0, 3).map((med, i) => (
+                <div key={med.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all cursor-pointer" onClick={() => navigate('/dashboard/prescriptions')}>
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl bg-${med.color}-100 text-${med.color}-600 flex items-center justify-center`}>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                       <Pill className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="text-sm font-black text-slate-900">{med.name}</div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{med.dose} • {med.time}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{med.dosage} • {med.frequency}</div>
                     </div>
-                  </div>
-                  <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                    med.status === 'Taken' ? 'bg-emerald-50 text-emerald-600' :
-                    med.status === 'Upcoming' ? 'bg-blue-50 text-blue-600' :
-                    'bg-slate-100 text-slate-400'
-                  }`}>
-                    {med.status}
                   </div>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-6 py-4 bg-purple-50 text-purple-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 transition-all">
-              Manage Prescriptions
+            <button 
+              onClick={() => navigate('/dashboard/prescriptions')}
+              className="w-full mt-6 py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all font-bold"
+            >
+              Log Daily Dosage
             </button>
           </motion.div>
 

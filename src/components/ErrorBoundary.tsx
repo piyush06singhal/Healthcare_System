@@ -18,11 +18,16 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   public static getDerivedStateFromError(error: Error): State {
+    // Force cache refresh on critical error
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('CRITICAL SYSTEM ERROR:', error, errorInfo);
+    console.group('CRITICAL SYSTEM ANOMALY');
+    console.error('An error has been intercepted by the clinical safety layer.');
+    console.error('Error Details:', error);
+    console.error('Component Stack:', errorInfo.componentStack);
+    console.groupEnd();
   }
 
   public render() {

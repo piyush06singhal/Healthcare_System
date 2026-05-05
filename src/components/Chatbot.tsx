@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2, Minimize2, Maximize2, Terminal, ChevronRight, Sparkles, Zap, Volume2, VolumeX } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { MessageSquare, X, Send, Bot, User, Loader2, Minimize2, Maximize2, Terminal, ChevronRight, Sparkles, Zap, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { toast } from 'sonner';
 
 import { generateAIResponse, generateSpeech } from '../lib/ai';
 
@@ -21,8 +24,70 @@ export default function Chatbot() {
     { id: '1', text: "System initialized. I am your **MediFlow AI** assistant. How can I assist with your clinical operations today?", sender: 'ai', timestamp: new Date() }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const { biometrics, prescriptions, treatments } = useSelector((state: RootState) => state.health);
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice input not supported in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.info('Neural core is listening...');
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+      // Let the user review or auto-send if desired. 
+      // For responsiveness, we just set the input.
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      toast.error('Voice link disrupted.');
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+  }, [isListening]);
+
+  const clinicalContext = useMemo(() => {
+    const latestHeartRate = biometrics.heartRate.length > 0 ? biometrics.heartRate[biometrics.heartRate.length - 1].value : 'N/A';
+    return `
+    Patient: ${user?.name || 'Unknown'}
+    Latest Vitals:
+    - Heart Rate: ${latestHeartRate} BPM
+    - Blood Pressure: ${biometrics.bloodPressure}
+    - Blood Sugar: ${biometrics.bloodSugar} mg/dL
+    - Oxygen: ${biometrics.oxygen}%
+    
+    Current Medications:
+    ${prescriptions.map(p => `- ${p.name} (${p.dosage}, ${p.frequency})`).join('\n')}
+    
+    Recent Treatments:
+    ${treatments.slice(0, 2).map(t => `- ${t.condition} (Doctor: ${t.doctor}, Status: ${t.status})`).join('\n')}
+    `;
+  }, [biometrics, prescriptions, treatments, user]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -66,7 +131,7 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const reply = await generateAIResponse(input, messages);
+      const reply = await generateAIResponse(input, messages, user?.role === 'doctor' ? 'doctor' : 'patient', clinicalContext);
       
       const aiMsg: Message = { 
         id: (Date.now() + 1).toString(), 
@@ -75,6 +140,11 @@ export default function Chatbot() {
         timestamp: new Date() 
       };
       setMessages(prev => [...prev, aiMsg]);
+      
+      // Auto-speak the response for voice assistant feel
+      if (reply) {
+        handleSpeech(reply, aiMsg.id);
+      }
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg: Message = { 
@@ -233,10 +303,15 @@ export default function Chatbot() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Type your clinical query..."
-                        className="w-full pl-5 pr-5 py-4 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium outline-none"
+                        placeholder={isListening ? "Listening..." : "Type your clinical query..."}
+                        className={`w-full pl-5 pr-12 py-4 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium outline-none ${isListening ? 'animate-pulse' : ''}`}
                       />
-                      <Sparkles className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                      <button 
+                        onClick={toggleListening}
+                        className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isListening ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'text-slate-300 hover:text-blue-500 hover:bg-white'}`}
+                      >
+                        {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      </button>
                     </div>
                     <motion.button 
                       whileHover={{ scale: 1.05 }}

@@ -69,76 +69,50 @@ export default function LoginPage() {
   const executeLogin = async () => {
     setLoading(true);
     try {
-      // Mock credentials for testing
-      if (
-        (email === 'doctor@mediflow.ai' || email === 'doctor@mediflow.com' || email === 'doctor@example.com') && 
-        password === 'password123' && 
-        role === 'doctor'
-      ) {
-        dispatch(setCredentials({
-          user: {
-            id: 'f6f6f6f6-f6f6-4f6f-bf6f-f6f6f6f6f6f6',
-            name: 'Dr. Piyush Singhal',
-            email: email,
-            role: 'doctor'
-          },
-          token: 'mock-jwt-token'
-        }));
-        toast.success(`Neural Link Established. Welcome, Dr. Singhal`, {
-          description: 'Systems synchronized. Accessing Clinical Portal...',
-          duration: 3000,
-        });
-        navigate('/dashboard');
-        return;
+      // 1. Authenticate with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Authentication failed.');
+
+      // 1.5 CHECK EMAIL CONFIRMATION
+      if (authData.user.identities && authData.user.identities.length > 0 && !authData.user.email_confirmed_at) {
+        // Technically Supabase might allow sign in but session might be limited
+        // We force verification check here
+        await supabase.auth.signOut();
+        throw new Error('Email not verified. Please check your secure inbox for the activation link.');
       }
 
-      if (
-        (email === 'patient@mediflow.com' || email === 'patient@example.com') && 
-        password === 'password123' && 
-        role === 'patient'
-      ) {
-        dispatch(setCredentials({
-          user: {
-            id: 'mock-patient-id',
-            name: 'John Doe',
-            email: email,
-            role: 'patient'
-          },
-          token: 'mock-jwt-token'
-        }));
-        toast.success(`Welcome back, John`, {
-          description: 'Accessing your personal health portal...',
-          duration: 3000,
-        });
-        navigate('/dashboard');
-        return;
-      }
-
-      const { data, error: authError } = await supabase
+      // 2. Fetch profile from our public users table
+      const { data: profile } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email)
-        .eq('role', role)
+        .eq('id', authData.user.id)
         .single();
 
-      if (authError || !data) {
-        throw new Error(`Invalid ${role} credentials`);
-      }
+      // Reliable Role Detection: Check profile table, then Auth metadata
+      const userRole = profile?.role || (authData.user.user_metadata?.role as any) || (authData.user.user_metadata?.identity_role as any) || 'patient';
+      const userName = profile?.name || authData.user.user_metadata?.full_name || email.split('@')[0];
 
       dispatch(setCredentials({
         user: {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role
+          id: authData.user.id,
+          name: userName,
+          email: email,
+          role: userRole
         },
-        token: 'mock-jwt-token'
+        token: authData.session?.access_token || 'active-session'
       }));
 
-      toast.success('Login successful');
+      toast.success(`Access Granted`, {
+        description: `Neural link synchronized as ${userRole.toUpperCase()}.`
+      });
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to login. Please check your credentials.');
+      toast.error(err.message || 'Verification failure. Access denied.');
       setAuthStep('input');
       setScanProgress(0);
     } finally {

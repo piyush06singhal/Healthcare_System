@@ -10,21 +10,38 @@ import {
   Search,
   Mic,
   MicOff,
-  Info
+  Info,
+  Heart,
+  Droplets,
+  Clock,
+  ChevronRight,
+  Brain,
+  TrendingDown,
+  History,
+  TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { generateAIResponse } from '../lib/ai';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store';
+import { addMessage } from '../store/healthSlice';
 
 export default function PatientAIChat() {
-  const [messages, setMessages] = useState([
-    { sender: 'ai', text: "Hello! I'm your MediFlow AI assistant. How can I help you with your health today?" }
-  ]);
+  const { messages } = useSelector((state: RootState) => state.health);
+  const dispatch = useDispatch();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(10);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const visibleMessages = useMemo(() => {
+    return messages.slice(-visibleCount);
+  }, [messages, visibleCount]);
+
+  const hasMore = messages.length > visibleCount;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,84 +66,123 @@ export default function PatientAIChat() {
     if (e) e.preventDefault();
     if (!input.trim() || loading) return;
 
-    const userMessage = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessage = { 
+      id: Date.now().toString(),
+      sender: 'patient' as const, 
+      text: input,
+      timestamp: new Date().toISOString()
+    };
+    dispatch(addMessage(userMessage));
     setInput('');
     setLoading(true);
 
     try {
       const response = await generateAIResponse(input, messages, 'patient');
-      const assistantMessage = { sender: 'ai', text: response || "I'm sorry, I couldn't process that request." };
-      setMessages(prev => [...prev, assistantMessage]);
+      const assistantMessage = { 
+        id: (Date.now() + 1).toString(),
+        sender: 'doctor' as const, 
+        text: response || "I'm sorry, I couldn't process that request.",
+        timestamp: new Date().toISOString()
+      };
+      dispatch(addMessage(assistantMessage));
     } catch (error) {
       console.error('AI Error:', error);
-      setMessages(prev => [...prev, { sender: 'ai', text: "I'm having trouble connecting right now. Please try again later." }]);
+      dispatch(addMessage({ 
+        id: (Date.now() + 1).toString(),
+        sender: 'doctor' as const, 
+        text: "I'm having trouble connecting right now. Please try again later.",
+        timestamp: new Date().toISOString()
+      }));
     } finally {
       setLoading(false);
     }
   };
 
+  const loadMore = () => setVisibleCount(prev => prev + 10);
+
   return (
-    <div className="h-full flex flex-col gap-8 pb-10">
+    <div className="h-full flex flex-col gap-8 pb-10 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">AI Health Assistant</h1>
-          <p className="text-slate-500 font-medium mt-1">Get instant answers to your health questions powered by advanced AI.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200">
+              Personal Concierge
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+              Neural Context Active
+            </div>
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">AI Health Assistant</h1>
+          <p className="text-slate-500 font-medium mt-1 text-lg">Instant, context-aware clinical intelligence at your fingertips.</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-100">
-            <Shield className="w-3 h-3" />
-            Secure & Private
-          </div>
-          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-blue-100">
-            <Info className="w-3 h-3" />
-            Gemini 3.1 Pro
+          <div className="px-5 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3">
+            <Shield className="w-4 h-4 text-emerald-500" />
+            AES-256 Vault
           </div>
         </div>
       </div>
 
-      <div className="flex-1 grid lg:grid-cols-4 gap-10 overflow-hidden">
+      <div className="flex-1 grid lg:grid-cols-4 gap-10 overflow-hidden min-h-0">
         {/* Chat Interface */}
-        <div className="lg:col-span-3 flex flex-col bg-white rounded-[3rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
-                <Bot className="w-7 h-7 text-white" />
+        <div className="lg:col-span-3 flex flex-col bg-white rounded-[3.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
+          <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20 backdrop-blur-3xl">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.25rem] flex items-center justify-center shadow-2xl shadow-blue-500/20">
+                <Brain className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">MediFlow AI</h3>
-                <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                  Always Online
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">MediFlow Neural Core</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex -space-x-1">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-4 h-4 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center">
+                        <Sparkles className="w-1.5 h-1.5 text-blue-600" />
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Synergizing Health Data</span>
                 </div>
               </div>
             </div>
-            <button className="p-3 text-slate-400 hover:text-slate-900 transition-colors">
+            <button className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center">
               <MoreVertical className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-8 custom-scrollbar">
-            <AnimatePresence initial={false}>
-              {messages.map((msg, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          <div className="flex-1 overflow-y-auto p-8 lg:p-12 space-y-10 custom-scrollbar scroll-smooth">
+            {hasMore && (
+              <div className="flex justify-center pb-10">
+                <button 
+                  onClick={loadMore}
+                  className="px-6 py-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-100"
                 >
-                  <div className={`flex gap-4 max-w-[80%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${
-                      msg.sender === 'user' ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white'
+                  <History className="w-4 h-4" />
+                  Load Previous Neural Context
+                </button>
+              </div>
+            )}
+            <AnimatePresence initial={false}>
+              {visibleMessages.map((msg, i) => (
+                <motion.div
+                  key={msg.id || i}
+                  initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className={`flex ${msg.sender === 'patient' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex gap-5 max-w-[85%] ${msg.sender === 'patient' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
+                      msg.sender === 'patient' ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white shadow-blue-500/10'
                     }`}>
-                      {msg.sender === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+                      {msg.sender === 'patient' ? <User className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
                     </div>
-                    <div className={`p-6 rounded-[2rem] text-sm font-medium leading-relaxed shadow-sm ${
-                      msg.sender === 'user' 
+                    <div className={`p-8 rounded-[2.5rem] text-base font-medium leading-relaxed shadow-xl ${
+                      msg.sender === 'patient' 
                         ? 'bg-slate-900 text-white rounded-tr-none' 
                         : 'bg-slate-50 text-slate-900 rounded-tl-none border border-slate-100'
                     }`}>
-                      <div className="prose prose-sm prose-slate max-w-none text-inherit">
+                      <div className="prose prose-sm xl:prose-base prose-slate max-w-none text-inherit leading-relaxed">
                         <ReactMarkdown>{msg.text}</ReactMarkdown>
                       </div>
                     </div>
@@ -140,15 +196,18 @@ export default function PatientAIChat() {
                 animate={{ opacity: 1 }}
                 className="flex justify-start"
               >
-                <div className="flex gap-4 items-center bg-slate-50 p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                  <Bot className="w-6 h-6 text-blue-600 animate-bounce" />
-                  <div className="flex flex-col gap-1">
-                    <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="flex gap-5 items-center bg-blue-50/50 p-8 rounded-[2.5rem] border border-blue-100/50 shadow-sm">
+                  <div className="relative">
+                    <Brain className="w-8 h-8 text-blue-600 animate-pulse" />
+                    <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-blue-400 animate-spin" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
+                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">AI is thinking...</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Synthesizing clinical knowledge...</span>
                   </div>
                 </div>
               </motion.div>
@@ -156,62 +215,73 @@ export default function PatientAIChat() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-8 bg-slate-50/50 border-t border-slate-100">
-            <form onSubmit={handleSend} className="relative flex items-center gap-4">
+          <div className="p-10 bg-white border-t border-slate-50 sticky bottom-0 z-20">
+            <form onSubmit={handleSend} className="relative flex items-center gap-5">
               <div className="flex-1 relative group">
                 <input 
                   type="text" 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={isListening ? "Listening..." : "Ask anything about your health, symptoms, or medications..."} 
-                  className={`w-full pl-8 pr-24 py-5 rounded-[2rem] bg-white border border-slate-200 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm ${isListening ? 'animate-pulse border-blue-400 bg-blue-50' : ''}`}
+                  placeholder={isListening ? "Neural core is listening..." : "Describe a symptom, ask about stats, or medication guidance..."} 
+                  className={`w-full pl-10 pr-32 py-6 rounded-[2.5rem] bg-slate-50 border border-slate-100 text-base font-medium focus:outline-none focus:ring-8 focus:ring-blue-500/5 transition-all shadow-inner ${isListening ? 'animate-pulse ring-8 ring-blue-500/10 border-blue-300' : 'hover:bg-slate-100'}`}
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
                   <button 
                     type="button"
                     onClick={toggleListening}
-                    className={`p-2 rounded-xl transition-all ${isListening ? 'bg-rose-500 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+                    className={`w-12 h-12 rounded-2xl transition-all flex items-center justify-center ${isListening ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:bg-white hover:shadow-md'}`}
                   >
-                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                   </button>
-                  <Sparkles className="w-5 h-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                  <div className="w-px h-8 bg-slate-200 hidden sm:block" />
+                  <Sparkles className="w-6 h-6 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                 </div>
               </div>
               <button 
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 shrink-0"
+                className="w-16 h-16 bg-blue-600 text-white rounded-[1.5rem] flex items-center justify-center hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-blue-600/30 disabled:opacity-50 shrink-0 group"
               >
-                <Send className="w-6 h-6" />
+                <Send className="w-8 h-8 group-hover:rotate-12 transition-transform" />
               </button>
             </form>
           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-10">
+        <div className="space-y-10 lg:block min-w-0">
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-[3rem] p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
+            className="bg-white rounded-[3.5rem] p-10 shadow-xl border border-slate-100 overflow-hidden"
           >
-            <h3 className="text-xl font-black text-slate-900 mb-8">Suggested Topics</h3>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                <Activity className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Active Context</h3>
+            </div>
             <div className="space-y-4">
               {[
-                "Analyze my recent blood test",
-                "Explain my medication side effects",
-                "Suggest a healthy diet plan",
-                "How to improve sleep quality",
-                "Understanding my symptoms"
-              ].map((topic, i) => (
-                <button 
-                  key={i}
-                  onClick={() => setInput(topic)}
-                  className="w-full text-left p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 hover:text-blue-600 border border-slate-100 text-xs font-bold transition-all flex items-center justify-between group"
-                >
-                  {topic}
-                  <Sparkles className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
+                { label: 'Heart Rate', value: '72', unit: 'BPM', icon: <Heart className="w-4 h-4" />, color: 'rose' },
+                { label: 'Stability', value: '88', unit: '%', icon: <Zap className="w-4 h-4" />, color: 'blue' },
+                { label: 'Hydration', value: 'Optimal', unit: '', icon: <Droplets className="w-4 h-4" />, color: 'emerald' },
+              ].map((vital, i) => (
+                <div key={i} className="p-5 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-lg transition-all cursor-pointer">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-lg bg-${vital.color}-100 text-${vital.color}-600`}>
+                        {vital.icon}
+                      </div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{vital.label}</span>
+                    </div>
+                    <TrendingUp className="w-3 h-3 text-emerald-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-slate-900 tracking-tight">{vital.value}</span>
+                    <span className="text-[10px] font-bold text-slate-400">{vital.unit}</span>
+                  </div>
+                </div>
               ))}
             </div>
           </motion.div>
@@ -220,17 +290,27 @@ export default function PatientAIChat() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-[3rem] p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
+            className="bg-slate-950 rounded-[3.5rem] p-10 shadow-2xl text-white relative overflow-hidden group"
           >
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-                <Activity className="w-5 h-5" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Medical Disclaimer</h3>
+            <h3 className="text-xl font-black mb-8 relative z-10">Neural Prompts</h3>
+            <div className="space-y-4 relative z-10">
+              {[
+                "Analyze recent vitals",
+                "Metabolic trend report",
+                "Hydration optimization",
+                "Sleep cycle audit"
+              ].map((topic, i) => (
+                <button 
+                  key={i}
+                  onClick={() => setInput(topic)}
+                  className="w-full text-left p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-between group/item"
+                >
+                  {topic}
+                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover/item:text-blue-400 transition-colors" />
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              MediFlow AI provides general information and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider.
-            </p>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl opacity-50" />
           </motion.div>
         </div>
       </div>

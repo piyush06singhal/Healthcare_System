@@ -8,20 +8,39 @@ import {
   Shield,
   FlaskConical,
   Stethoscope,
-  Activity
+  Activity,
+  Filter,
+  Lock,
+  Sparkles,
+  Share2,
+  Clock,
+  ChevronRight
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 
 const medicalRecords = [
-  { id: 'REC-001', name: 'Annual Physical Report', date: 'Oct 12, 2026', type: 'Report', doctor: 'Dr. Sarah Mitchell', size: '2.4 MB', icon: <FileText className="w-6 h-6" />, color: 'blue' },
-  { id: 'REC-002', name: 'Blood Chemistry Panel', date: 'Sep 28, 2026', type: 'Lab', doctor: 'Dr. James Wilson', size: '1.8 MB', icon: <FlaskConical className="w-6 h-6" />, color: 'emerald' },
-  { id: 'REC-003', name: 'Chest X-Ray Analysis', date: 'Aug 15, 2026', type: 'Imaging', doctor: 'Dr. Elena Rodriguez', size: '15.2 MB', icon: <Activity className="w-6 h-6" />, color: 'indigo' },
-  { id: 'REC-004', name: 'Cardiology Consultation', date: 'Jul 22, 2026', type: 'Consultation', doctor: 'Dr. Sarah Mitchell', size: '0.8 MB', icon: <Stethoscope className="w-6 h-6" />, color: 'rose' },
+  { id: 'REC-001', name: 'Annual Physical Report', date: 'Oct 12, 2026', type: 'Report', doctor: 'Dr. Sarah Mitchell', size: '2.4 MB', icon: <FileText className="w-6 h-6" />, color: 'blue', insight: 'All markers within optimal range. Slight increase in vitamin D recommended.' },
+  { id: 'REC-002', name: 'Blood Chemistry Panel', date: 'Sep 28, 2026', type: 'Lab', doctor: 'Dr. James Wilson', size: '1.8 MB', icon: <FlaskConical className="w-6 h-6" />, color: 'emerald', insight: 'Glucose levels stabilized at 98mg/dL. High metabolic efficiency detected.' },
+  { id: 'REC-003', name: 'Chest X-Ray Analysis', date: 'Aug 15, 2026', type: 'Imaging', doctor: 'Dr. Elena Rodriguez', size: '15.2 MB', icon: <Activity className="w-6 h-6" />, color: 'indigo', insight: 'Secondary analysis confirms no pulmonary anomalies. Structural cardiac volume is nominal.' },
+  { id: 'REC-004', name: 'Cardiology Consultation', date: 'Jul 22, 2026', type: 'Consultation', doctor: 'Dr. Sarah Mitchell', size: '0.8 MB', icon: <Stethoscope className="w-6 h-6" />, color: 'rose', insight: 'Heart rate variability shows positive trend. Continue current aerobic protocol.' },
 ];
+
+const categories = ['All', 'Report', 'Lab', 'Imaging', 'Consultation'];
 
 export default function PatientRecords() {
   const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const filteredRecords = useMemo(() => {
+    return medicalRecords.filter(rec => {
+      const matchesSearch = rec.name.toLowerCase().includes(search.toLowerCase()) || 
+                           rec.doctor.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = activeCategory === 'All' || rec.type === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [search, activeCategory]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -34,9 +53,9 @@ export default function PatientRecords() {
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { x: -20, opacity: 0 },
     visible: {
-      y: 0,
+      x: 0,
       opacity: 1
     }
   };
@@ -46,93 +65,209 @@ export default function PatientRecords() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-10"
+      className="space-y-12"
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Medical Records</h1>
-          <p className="text-slate-500 font-medium mt-1">Secure access to your clinical history and lab results.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200">
+              Temporal Audit
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+              <Shield className="w-3 h-3" />
+              End-to-End Encrypted
+            </div>
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Clinical Timeline</h1>
+          <p className="text-slate-500 font-medium mt-2 text-lg">Secure chronological access to your comprehensive health history.</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative group w-full md:w-auto">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
             <input 
               type="text" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search records..." 
-              className="pl-12 pr-6 py-4 rounded-[2rem] bg-white border border-slate-200 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all w-80 text-slate-900 shadow-sm"
+              placeholder="Search records or clinicians..." 
+              className="pl-14 pr-8 py-5 rounded-[2.5rem] bg-white border border-slate-200 text-sm focus:outline-none focus:ring-8 focus:ring-blue-500/5 transition-all w-full md:w-96 text-slate-900 shadow-xl shadow-slate-200/40"
             />
           </div>
-          <button className="px-8 py-4 bg-blue-600 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Upload New
+          <button 
+            onClick={() => toast.success('Initializing secure upload protocol...')}
+            className="w-full sm:w-auto px-8 py-5 bg-slate-900 text-white rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-2xl shadow-slate-900/10 flex items-center justify-center gap-3 group"
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            Transmit Data
           </button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-3 space-y-6">
-          {medicalRecords.map((record, i) => (
-            <motion.div
-              key={record.id}
-              variants={itemVariants}
-              whileHover={{ x: 10 }}
-              className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 group flex items-center justify-between"
+      {/* Category Filter */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+        <div className="p-2 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeCategory === cat 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                  : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
+              }`}
             >
-              <div className="flex items-center gap-6">
-                <div className={`w-16 h-16 rounded-2xl bg-${record.color}-50 text-${record.color}-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500`}>
-                  {record.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{record.name}</h3>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{record.type}</span>
-                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{record.date}</span>
-                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                    <span className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{record.doctor}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button className="p-4 rounded-2xl bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                  <Eye className="w-5 h-5" />
-                </button>
-                <button className="p-4 rounded-2xl bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all">
-                  <Download className="w-5 h-5" />
-                </button>
-                <button className="p-4 rounded-2xl bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-              </div>
-            </motion.div>
+              {cat}
+            </button>
           ))}
         </div>
+      </div>
 
+      <div className="grid lg:grid-cols-4 gap-12 relative">
+        {/* Timeline Axis */}
+        <div className="absolute left-8 lg:left-[4.25rem] top-2 bottom-2 w-px bg-gradient-to-b from-blue-600 via-slate-200 to-transparent hidden lg:block opacity-30" />
+
+        <div className="lg:col-span-3 space-y-10 relative">
+          <AnimatePresence mode="popLayout">
+            {filteredRecords.map((record) => (
+              <motion.div
+                key={record.id}
+                layout
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                className="group relative pl-0 lg:pl-20"
+              >
+                {/* Timeline Node */}
+                <div className="absolute left-[3.85rem] top-8 w-3 h-3 rounded-full bg-blue-600 border-4 border-white shadow-lg hidden lg:block group-hover:scale-150 transition-transform z-10" />
+
+                <div className="bg-white rounded-[3.5rem] p-8 lg:p-10 shadow-2xl shadow-slate-200/60 border border-slate-100 hover:border-blue-500/30 transition-all">
+                  <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+                      <div className={`w-20 h-20 rounded-[2rem] bg-${record.color}-50 text-${record.color}-600 flex items-center justify-center shrink-0 shadow-lg shadow-${record.color}-600/5 group-hover:rotate-6 transition-transform duration-500`}>
+                        {record.icon}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-2xl font-black text-slate-900 tracking-tight">{record.name}</h3>
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500`}>
+                            {record.id}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          <div className="flex items-center gap-1.5 text-blue-600">
+                            <Clock className="w-3 h-3" />
+                            {record.date}
+                          </div>
+                          <span className="w-1.5 h-1.5 bg-slate-200 rounded-full" />
+                          <div className="flex items-center gap-1.5 text-indigo-600">
+                            <Stethoscope className="w-3 h-3" />
+                            {record.doctor}
+                          </div>
+                          <span className="w-1.5 h-1.5 bg-slate-200 rounded-full" />
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="w-3 h-3" />
+                            {record.size}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 self-end xl:self-center">
+                      <button 
+                        onClick={() => toast.info('Previewing clinical document...')}
+                        className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center group/btn"
+                      >
+                        <Eye className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                      </button>
+                      <button 
+                        onClick={() => toast.success('Starting secure download...')}
+                        className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all flex items-center justify-center group/btn"
+                      >
+                        <Download className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                      </button>
+                      <button 
+                        onClick={() => toast.info('Preparing sharing link...')}
+                        className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center group/btn"
+                      >
+                        <Share2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* AI Insight Section */}
+                  <div className="mt-8 pt-8 border-t border-slate-50 flex gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">AI Diagnostic Insight</div>
+                      <p className="text-sm text-slate-500 font-medium leading-relaxed italic">
+                        "{record.insight}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Sidebar Controls */}
         <div className="space-y-10">
           <motion.div 
             variants={itemVariants}
-            className="bg-white rounded-[3rem] p-10 shadow-xl shadow-slate-200/50 border border-slate-100"
+            className="bg-slate-950 rounded-[3.5rem] p-10 shadow-2xl text-white relative overflow-hidden group"
           >
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                <Shield className="w-5 h-5" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-black tracking-tight">Security Vault</h3>
               </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Data Privacy</h3>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed mb-8">
+                Records are protected by biometric encryption. Direct access is audited in real-time.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Biometric Lock</span>
+                  <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                    <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Log Audit</span>
+                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed mb-8">
-              All your medical records are encrypted with 256-bit AES encryption and stored in HIPAA-compliant servers.
-            </p>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Access Logs</span>
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">View</span>
+            <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+          </motion.div>
+
+          <motion.div 
+            variants={itemVariants}
+            className="bg-white rounded-[3rem] p-10 shadow-xl border border-slate-100"
+          >
+            <h3 className="text-xl font-black text-slate-900 mb-8">Storage Status</h3>
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-end mb-2">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Medical Cloud</div>
+                  <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest">42.8 MB / 500 MB</div>
+                </div>
+                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '15%' }}
+                    transition={{ duration: 1.5 }}
+                    className="h-full bg-blue-600 rounded-full" 
+                  />
+                </div>
               </div>
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sharing</span>
-                <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Disabled</span>
-              </div>
+              <button className="w-full py-4 px-6 bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                Upgrade Capacity
+              </button>
             </div>
           </motion.div>
         </div>

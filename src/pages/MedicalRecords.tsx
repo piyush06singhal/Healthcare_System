@@ -17,7 +17,10 @@ import {
   Share,
   X,
   UserPlus,
-  Link as LinkIcon
+  Link as LinkIcon,
+  TrendingUp,
+  AlertTriangle,
+  Activity as ActivityIcon
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 
@@ -34,6 +37,7 @@ interface Record {
 export default function MedicalRecords() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sharingRecord, setSharingRecord] = useState<Record | null>(null);
+  const [viewingAnalysis, setViewingAnalysis] = useState<Record | null>(null);
   const [shareEmail, setShareEmail] = useState('');
   const containerRef = useRef(null);
 
@@ -204,20 +208,166 @@ export default function MedicalRecords() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <Clock className="w-3 h-3" />
-                    {record.date}
+                  <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <Clock className="w-3 h-3" />
+                      {record.date}
+                    </div>
+                    <button 
+                      onClick={() => setViewingAnalysis(record)}
+                      className="flex items-center gap-2 text-[10px] font-black text-purple-600 uppercase tracking-widest hover:gap-3 transition-all"
+                    >
+                      View Details
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
                   </div>
-                  <button className="flex items-center gap-2 text-[10px] font-black text-purple-600 uppercase tracking-widest hover:gap-3 transition-all">
-                    View Details
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
+
+        {/* Share Modal */}
+        <AnimatePresence>
+          {viewingAnalysis && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setViewingAnalysis(null)}
+                className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, x: 50 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95, x: 50 }}
+                className="relative bg-white rounded-[3.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+              >
+                {/* Modal Header */}
+                <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-purple-600 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-purple-600/20">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-slate-900 tracking-tight">{viewingAnalysis.name}</h2>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">{viewingAnalysis.category}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Analyzed by MediFlow Neural Core 2.0</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setViewingAnalysis(null)}
+                    className="w-14 h-14 bg-white text-slate-400 border border-slate-200 rounded-2xl flex items-center justify-center hover:text-slate-900 transition-all shrink-0"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="flex-1 overflow-y-auto p-12 space-y-12 custom-scrollbar">
+                  {/* Analysis Summary */}
+                  <div className="grid md:grid-cols-3 gap-8">
+                    <div className="p-8 rounded-[2.5rem] bg-emerald-50 border border-emerald-100">
+                      <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
+                      <div className="text-2xl font-black text-emerald-950">Normal</div>
+                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Status Overview</div>
+                    </div>
+                    <div className="p-8 rounded-[2.5rem] bg-blue-50 border border-blue-100">
+                      <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
+                        <ActivityIcon className="w-5 h-5" />
+                      </div>
+                      <div className="text-2xl font-black text-blue-950">12 Markers</div>
+                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Total Indicators</div>
+                    </div>
+                    <div className="p-8 rounded-[2.5rem] bg-amber-50 border border-amber-100">
+                      <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4">
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                      <div className="text-2xl font-black text-amber-950">1 Alert</div>
+                      <div className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-1">Attention Required</div>
+                    </div>
+                  </div>
+
+                  {/* Detailed Values */}
+                  <div className="space-y-8">
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                      <TrendingUp className="w-6 h-6 text-purple-600" />
+                      Biometric Marker Analysis
+                    </h3>
+
+                    <div className="space-y-4">
+                      {[
+                        { name: 'Hemoglobin (Hgb)', value: '14.2', unit: 'g/dL', range: '13.5 - 17.5', status: 'normal', width: '70%' },
+                        { name: 'White Blood Cell Count', value: '7.4', unit: 'x10³/µL', range: '4.5 - 11.0', status: 'normal', width: '45%' },
+                        { name: 'Fasting Plasma Glucose', value: '105', unit: 'mg/dL', range: '70 - 99', status: 'high', width: '85%' },
+                        { name: 'Vitamin D, 25-Hydroxy', value: '42', unit: 'ng/mL', range: '30 - 100', status: 'normal', width: '35%' },
+                      ].map((item, idx) => (
+                        <div key={idx} className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 group hover:border-purple-200 transition-all">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+                            <div>
+                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.range} (Normal Range)</div>
+                              <div className="text-lg font-black text-slate-900">{item.name}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-3xl font-black text-slate-900 leading-none">
+                                {item.value} <span className="text-sm text-slate-400 font-bold">{item.unit}</span>
+                              </div>
+                              <div className={`text-[10px] font-black uppercase tracking-widest mt-2 px-3 py-1 rounded-full inline-block ${
+                                item.status === 'normal' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                              }`}>
+                                {item.status}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="h-3 bg-slate-200 rounded-full overflow-hidden relative">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: item.width }}
+                              transition={{ duration: 1.5, delay: 0.5 + idx * 0.1 }}
+                              className={`h-full ${item.status === 'normal' ? 'bg-purple-600' : 'bg-rose-500'}`}
+                            />
+                            <div className="absolute left-[30%] top-0 bottom-0 w-px bg-slate-400/20" />
+                            <div className="absolute left-[80%] top-0 bottom-0 w-px bg-slate-400/20" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-10 rounded-[3rem] bg-slate-950 text-white relative overflow-hidden">
+                    <div className="relative z-10">
+                      <h4 className="text-xl font-black mb-4">Neural Clinical Insight</h4>
+                      <p className="text-slate-400 text-base leading-relaxed font-medium">
+                        Based on your results, we recommend increasing your dietary fiber intake and scheduling a follow-up for your Fasting Plasma Glucose, which is slightly elevated. Your metabolic efficiency remains high at 88/100.
+                      </p>
+                      <button className="mt-8 px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition-colors">
+                        Consult AI Agent
+                      </button>
+                    </div>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px]" />
+                  </div>
+                </div>
+
+                <div className="p-10 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4">
+                  <button 
+                    onClick={() => setViewingAnalysis(null)}
+                    className="px-8 py-4 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-slate-900 transition-colors"
+                  >
+                    Close Secure View
+                  </button>
+                  <button className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Export Analysis
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Share Modal */}
         <AnimatePresence>

@@ -6,6 +6,7 @@ import AuthLayout from '../components/AuthLayout';
 import { setCredentials } from '../store/authSlice';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -31,32 +32,61 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const { data, error: insertError } = await supabase
-        .from('users')
-        .insert([{ name, email, password, role }])
-        .select()
-        .single();
+      // 1. Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            role: role,
+            identity_role: role // Extra flag for trigger reliability
+          },
+          emailRedirectTo: window.location.origin + '/login'
+        }
+      });
 
-      if (insertError) throw insertError;
+      if (authError) throw authError;
 
-      if (role === 'patient') {
-        await supabase.from('patient_profiles').insert([{ user_id: data.id }]);
-      } else {
-        await supabase.from('doctor_profiles').insert([{ user_id: data.id }]);
+      // If email confirmation is required, session will be null
+      if (authData.user && !authData.session) {
+        toast.success('Registration Initiated', {
+          description: 'A verification link has been sent to your terminal. Please confirm your email to activate your neural identity.',
+          duration: 10000,
+        });
+        navigate('/login');
+        return;
       }
 
-      dispatch(setCredentials({
-        user: {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role
-        },
-        token: 'mock-jwt-token'
-      }));
+      // If auto-logged in (email verification disabled in Supabase), we sync locally
+      if (authData.user && authData.session) {
+        // Wait a small moment for the trigger to fire, or fallback to metadata
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
 
-      navigate('/dashboard');
+        const finalRole = profile?.role || role;
+        const finalName = profile?.name || name;
+
+        dispatch(setCredentials({
+          user: {
+            id: authData.user.id,
+            name: finalName,
+            email: authData.user.email || email,
+            role: finalRole as any
+          },
+          token: authData.session.access_token
+        }));
+        
+        toast.success('Neural Link Established', {
+          description: `Welcome back, ${finalName}. Your clinical terminal is online.`
+        });
+        navigate('/dashboard');
+      }
     } catch (err: any) {
+      console.error('Registration error:', err);
       setError(err.message || 'Failed to create account. Please try again.');
       setAuthStep('input');
     } finally {

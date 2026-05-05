@@ -136,7 +136,8 @@ export default function DoctorAIChat() {
     setIsLoading(true);
 
     try {
-      const reply = await generateAIResponse(messageText, messages, 'doctor');
+      const contextString = clinicalContext.map(p => `- ${p.name}: ${p.condition} (${p.priority})`).join('\n');
+      const reply = await generateAIResponse(messageText, messages, 'doctor', contextString);
       const aiMsg: Message = { 
         id: (Date.now() + 1).toString(), 
         text: reply || "Neural processing interrupted. Please re-sync.", 
@@ -144,8 +145,7 @@ export default function DoctorAIChat() {
         timestamp: new Date() 
       };
       setMessages(prev => [...prev, aiMsg]);
-      // Optional: Speak the first 200 chars of the AI response
-      if (reply) speakText(reply.substring(0, 200).replace(/[#*`]/g, ''));
+      if (reply) speakText(reply.substring(0, 300).replace(/[#*`]/g, ''));
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg: Message = { 

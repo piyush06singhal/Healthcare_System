@@ -17,8 +17,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { GoogleGenAI, Type } from "@google/genai";
+import { useDispatch } from 'react-redux';
+import { addDiagnostic } from '../store/healthSlice';
 
 export default function DoctorDiagnostics() {
+  const dispatch = useDispatch();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -141,6 +144,7 @@ export default function DoctorDiagnostics() {
 
       setAnalysisResult(newResult);
       setHistory(prev => [newResult, ...prev]);
+      dispatch(addDiagnostic(newResult));
       toast.success('AI Analysis Complete');
     } catch (error) {
       console.error('AI Analysis Error:', error);

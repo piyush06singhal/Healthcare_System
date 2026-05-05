@@ -30,63 +30,11 @@ export default function DoctorAppointments() {
   const [queueFilter, setQueueFilter] = useState('all');
   const [sortBy, setSortBy] = useState('time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const { appointments: reduxAppointments } = useSelector((state: RootState) => state.health);
   const { user } = useSelector((state: RootState) => state.auth);
-  const { socket } = useNotifications();
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchAppointments();
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (socket && user?.id) {
-      // Joining doctor specific room happened in NotificationContext
-      
-      const handleNewAppointment = (newApt: any) => {
-        setAppointments(prev => {
-          // Prevent duplicates
-          if (prev.find(a => a.id === newApt.id)) return prev;
-          
-          toast.info('New Appointment Request', {
-            description: `Patient ${newApt.patient?.name} scheduled an appointment for ${format(new Date(newApt.appointment_date), 'MMM d, h:mm a')}`,
-            duration: 5000,
-          });
-          
-          return [newApt, ...prev];
-        });
-      };
-
-      socket.on('appointment-created', handleNewAppointment);
-
-      return () => {
-        socket.off('appointment-created', handleNewAppointment);
-      };
-    }
-  }, [socket, user?.id]);
-
-  const fetchAppointments = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          patient:users!patient_id(id, name, email)
-        `)
-        .eq('doctor_id', user?.id)
-        .order('appointment_date', { ascending: true });
-      
-      if (error) throw error;
-      setAppointments(data || []);
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const appointments = reduxAppointments;
 
   const updateAppointmentStatus = async (id: string, status: string) => {
     try {

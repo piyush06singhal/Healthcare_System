@@ -47,7 +47,7 @@ export default function VideoGeneration() {
       setCurrentStep(2);
       setStatus('Generating video frames...');
       let operation = await ai.models.generateVideos({
-        model: 'veo-3.1-fast-generate-preview',
+        model: 'veo-3.1-generate-preview',
         prompt: `Medical educational video: ${prompt}. High quality, professional clinical style.`,
         config: {
           numberOfVideos: 1,

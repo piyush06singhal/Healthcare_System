@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -80,8 +80,23 @@ const containerVariants = {
 
 export default function DoctorOverview() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { biometrics, appointments: reduxAppointments } = useSelector((state: RootState) => state.health);
   const { notifications } = useNotifications();
   const navigate = useNavigate();
+  const [networkPatientCount, setNetworkPatientCount] = useState<string>('...');
+
+  useEffect(() => {
+    const fetchPatientCount = async () => {
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'patient');
+      if (!error && count !== null) {
+        setNetworkPatientCount(count.toLocaleString());
+      }
+    };
+    fetchPatientCount();
+  }, []);
 
   const latestNotifications = notifications.slice(0, 3);
   const displayFeed = latestNotifications.length > 0 ? latestNotifications.map(n => ({
@@ -128,10 +143,13 @@ export default function DoctorOverview() {
       return b.id - a.id;
     });
 
+  const pendingAppointments = reduxAppointments.filter(a => a.status === 'pending');
+  const criticalAppointments = reduxAppointments.filter(a => a.priority === 'urgent' || a.priority === 'critical');
+
   const stats = [
-    { label: 'Network Patients', value: '4.2k', icon: <Users className="w-6 h-6" />, trend: '+12%', status: 'nominal', color: 'blue' },
-    { label: 'Triage Queue', value: '18', icon: <Calendar className="w-6 h-6" />, trend: '+3', status: 'priority', color: 'purple' },
-    { label: 'Critical Telemetry', value: '03', icon: <AlertCircle className="w-6 h-6" />, trend: '-2', status: 'urgent', color: 'rose' },
+    { label: 'Network Patients', value: networkPatientCount, icon: <Users className="w-6 h-6" />, trend: '+12%', status: 'nominal', color: 'blue' },
+    { label: 'Triage Queue', value: reduxAppointments.length.toString(), icon: <Calendar className="w-6 h-6" />, trend: `+${pendingAppointments.length}`, status: 'priority', color: 'purple' },
+    { label: 'Critical Telemetry', value: criticalAppointments.length.toString().padStart(2, '0'), icon: <AlertCircle className="w-6 h-6" />, trend: '-2', status: 'urgent', color: 'rose' },
     { label: 'Neural Diagnostics', value: '98%', icon: <Brain className="w-6 h-6" />, trend: 'Optimal', status: 'nominal', color: 'emerald' },
   ];
 
@@ -504,42 +522,47 @@ export default function DoctorOverview() {
 
       {/* Notifications & Triage */}
       <div className="grid lg:grid-cols-2 gap-8">
-        <motion.div variants={itemVariants} className="card p-10 space-y-8">
+        <motion.div variants={itemVariants} className="card p-10 space-y-8 bg-white border border-slate-100 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-950 text-white rounded-xl flex items-center justify-center">
-                <Bell className="w-5 h-5" />
+              <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center">
+                <Activity className="w-5 h-5 shadow-lg shadow-blue-600/30" />
               </div>
-              <h3 className="text-xl font-display font-black text-slate-950 uppercase tracking-tight">Intelligence Feed</h3>
+              <h3 className="text-xl font-display font-black text-slate-950 uppercase tracking-tight">Live Telemetry: Patient #001</h3>
             </div>
-            <button 
-              onClick={() => toast.info('Navigating to full intelligence feed...')}
-              className="text-[10px] font-black text-blue-600 uppercase tracking-widest"
-            >
-              View All
-            </button>
+            <div className="flex items-center gap-2 text-[8px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+               Real-time Sync
+            </div>
           </div>
           
-          <div className="space-y-4">
-            {displayFeed.map((feed, i) => (
-              <div 
-                key={i} 
-                onClick={() => toast.success(`Viewing details for: ${feed.title}`)}
-                className="group p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all flex items-start gap-5 cursor-pointer"
-              >
-                <div className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${
-                  feed.type === 'critical' ? 'bg-rose-500 animate-pulse' :
-                  feed.type === 'success' ? 'bg-emerald-500' : 'bg-blue-500'
-                }`} />
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-black text-slate-950">{feed.title}</h4>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">{feed.meta}</span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium leading-relaxed">{feed.desc}</p>
-                </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: 'Heart Rate', value: (biometrics.heartRate && biometrics.heartRate.length > 0) ? biometrics.heartRate[biometrics.heartRate.length - 1].value : 0, unit: 'BPM', color: 'rose' },
+              { label: 'BP', value: biometrics.bloodPressure, unit: 'mmHg', color: 'blue' },
+              { label: 'Sugar', value: biometrics.bloodSugar, unit: 'mg/dL', color: 'amber' },
+              { label: 'Oxygen', value: biometrics.oxygen, unit: '%', color: 'emerald' },
+            ].map((v, i) => (
+              <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{v.label}</div>
+                <div className={`text-xl font-black text-${v.color}-600 tracking-tight`}>{v.value} <span className="text-[10px] text-slate-400">{v.unit}</span></div>
               </div>
             ))}
+          </div>
+
+          <div className="h-48 w-full bg-slate-50 rounded-3xl p-4 border border-slate-100">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={biometrics.heartRate}>
+                <defs>
+                  <linearGradient id="liveHeart" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#liveHeart)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </motion.div>
 

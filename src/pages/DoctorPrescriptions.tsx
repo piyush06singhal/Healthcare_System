@@ -18,12 +18,14 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
+import { addPrescription } from '../store/healthSlice';
 import { toast } from 'sonner';
 
 export default function DoctorPrescriptions() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,8 +80,24 @@ export default function DoctorPrescriptions() {
     e.preventDefault();
     try {
       setLoading(true);
+      const prescriptionId = `RX-${Math.floor(Math.random() * 900) + 100}`;
+      
+      const reduxPrescription = {
+        id: prescriptionId,
+        name: newPrescription.medication,
+        dosage: newPrescription.dosage,
+        frequency: newPrescription.frequency,
+        remaining: 30, // Default for mock
+        total: 30,
+        doctor: user?.name || 'Dr. Mitchell',
+        status: 'Active' as const,
+        category: 'Maintenance'
+      };
+
+      dispatch(addPrescription(reduxPrescription));
+
       const mockNewPrescription = {
-        id: Date.now().toString(),
+        id: prescriptionId,
         date: new Date().toISOString().split('T')[0],
         notes: `${newPrescription.medication} - ${newPrescription.dosage} (${newPrescription.frequency}) via ${newPrescription.route} for ${newPrescription.duration}. Diagnosis: ${newPrescription.diagnosis}. Refills: ${newPrescription.refills}. ${newPrescription.notes}`,
         patient: {
@@ -87,7 +105,8 @@ export default function DoctorPrescriptions() {
         },
         route: newPrescription.route,
         refills: newPrescription.refills,
-        diagnosis: newPrescription.diagnosis
+        diagnosis: newPrescription.diagnosis,
+        status: 'active'
       };
       
       setPrescriptions(prev => [mockNewPrescription, ...prev]);
