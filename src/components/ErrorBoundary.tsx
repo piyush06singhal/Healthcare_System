@@ -23,8 +23,8 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.group('CRITICAL SYSTEM ANOMALY');
-    console.error('An error has been intercepted by the clinical safety layer.');
+    console.group('CRITICAL SYSTEM ERROR');
+    console.error('An error has been intercepted by the application safety layer.');
     console.error('Error Details:', error);
     console.error('Component Stack:', errorInfo.componentStack);
     console.groupEnd();

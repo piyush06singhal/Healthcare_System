@@ -261,20 +261,20 @@ export default function PatientDashboard() {
     { id: 'reminder', label: 'Set Med Reminder', icon: <Bell className="w-4 h-4" />, color: 'text-cyan-600', bg: 'bg-cyan-50', action: () => setIsReminderModalOpen(true) },
   ];
 
-  const [isNeuralSyncing, setIsNeuralSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    // Simulate neural sync when profile changes
-    setIsNeuralSyncing(true);
-    const timer = setTimeout(() => setIsNeuralSyncing(false), 2000);
+    // Simulate sync when profile changes
+    setIsSyncing(true);
+    const timer = setTimeout(() => setIsSyncing(false), 2000);
     return () => clearTimeout(timer);
   }, [activeProfile?.id]);
 
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-hidden">
-      {/* Neural Sync Overlay */}
+      {/* Sync Overlay */}
       <AnimatePresence>
-        {isNeuralSyncing && (
+        {isSyncing && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -289,13 +289,13 @@ export default function PatientDashboard() {
                   filter: ["blur(0px)", "blur(10px)", "blur(0px)"]
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-32 h-32 bg-indigo-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(79,70,229,0.5)] border border-white/20"
+                className="w-32 h-32 bg-blue-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(37,99,235,0.5)] border border-white/20"
               >
-                <Brain className="w-16 h-16 text-white" />
+                <Activity className="w-16 h-16 text-white" />
               </motion.div>
               <div>
-                <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Neural Link Syncing</h2>
-                <p className="text-indigo-400 font-black text-xs uppercase tracking-[0.5em] animate-pulse">Accessing {activeProfile?.name || 'Primary'} Records</p>
+                <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Synchronizing Profile</h2>
+                <p className="text-blue-400 font-black text-xs uppercase tracking-[0.5em] animate-pulse">Accessing {activeProfile?.name || 'Primary'} Records</p>
               </div>
             </div>
           </motion.div>
@@ -477,7 +477,7 @@ export default function PatientDashboard() {
                 </h3>
                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  Neural Optimized
+                  Medical Optimized
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

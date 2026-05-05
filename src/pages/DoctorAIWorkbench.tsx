@@ -48,10 +48,10 @@ export default function DoctorAIWorkbench() {
         <div className="space-y-4">
           <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-950 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-[0.25em] shadow-xl border border-white/5">
             <Cpu className="w-3 h-3" />
-            Neural Compute V4.2
+            AI Processing V4.2
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-display font-black text-slate-900 tracking-tighter leading-none">Clinical Workbench</h1>
-          <p className="text-slate-500 font-medium text-xl max-w-xl leading-relaxed">Your integrated AI engine for clinical decision support and neural diagnostics.</p>
+          <p className="text-slate-500 font-medium text-xl max-w-xl leading-relaxed">Your integrated AI engine for clinical decision support and medical diagnostics.</p>
         </div>
 
         <div className="flex bg-white p-2 rounded-[2rem] shadow-2xl border border-slate-100">

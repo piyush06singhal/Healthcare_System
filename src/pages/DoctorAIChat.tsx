@@ -41,7 +41,7 @@ export default function DoctorAIChat() {
   const [messages, setMessages] = useState<Message[]>([
     { 
       id: '1', 
-      text: "Neural Link Established. I am your **Clinical AI Assistant**. I can help you analyze patient data, optimize your schedule, or draft clinical notes. How can I assist your practice today?", 
+      text: "Connection Established. I am your **Clinical AI Assistant**. I can help you analyze patient data, optimize your schedule, or draft clinical notes. How can I assist your practice today?", 
       sender: 'ai', 
       timestamp: new Date() 
     }
@@ -73,7 +73,7 @@ export default function DoctorAIChat() {
       }
     } catch (error) {
       console.error('Speech error:', error);
-      toast.error('Neural voice synthesis failed');
+      toast.error('Voice synthesis failed');
 	  setIsSpeaking(false);
     }
   };
@@ -103,7 +103,7 @@ export default function DoctorAIChat() {
 
     recognition.onstart = () => {
       setIsListening(true);
-      toast.info('Neural audio link active...');
+      toast.info('Audio link active...');
     };
 
     recognition.onresult = (event: any) => {
@@ -140,7 +140,7 @@ export default function DoctorAIChat() {
       const reply = await generateAIResponse(messageText, messages, 'doctor', contextString);
       const aiMsg: Message = { 
         id: (Date.now() + 1).toString(), 
-        text: reply || "Neural processing interrupted. Please re-sync.", 
+        text: reply || "Processing interrupted. Please re-sync.", 
         sender: 'ai', 
         timestamp: new Date() 
       };
@@ -150,7 +150,7 @@ export default function DoctorAIChat() {
       console.error('Chat error:', error);
       const errorMsg: Message = { 
         id: (Date.now() + 1).toString(), 
-        text: "Critical Error: Neural engine connection failed. Check your secure uplink.", 
+        text: "Error: AI engine connection failed. Check your secure uplink.", 
         sender: 'ai', 
         timestamp: new Date() 
       };
@@ -215,7 +215,7 @@ export default function DoctorAIChat() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.25em] shadow-2xl">
-              Clinical Neural Link
+              Clinical Assistant Link
             </div>
             <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
@@ -335,7 +335,7 @@ export default function DoctorAIChat() {
                       <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-2 h-2 bg-blue-500 rounded-full" />
                       <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-2 h-2 bg-blue-500 rounded-full" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Neural Synthesis...</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing...</span>
                   </div>
                 </div>
               </div>

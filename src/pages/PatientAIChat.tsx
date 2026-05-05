@@ -110,7 +110,7 @@ export default function PatientAIChat() {
             </div>
             <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              Neural Context Active
+              Active Health Context
             </div>
           </div>
           <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">AI Health Assistant</h1>
@@ -133,7 +133,7 @@ export default function PatientAIChat() {
                 <Brain className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">MediFlow Neural Core</h3>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">MediFlow AI Assistant</h3>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex -space-x-1">
                     {[1, 2, 3].map(i => (
@@ -159,7 +159,7 @@ export default function PatientAIChat() {
                   className="px-6 py-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-100"
                 >
                   <History className="w-4 h-4" />
-                  Load Previous Neural Context
+                  Load Previous Context
                 </button>
               </div>
             )}
@@ -222,7 +222,7 @@ export default function PatientAIChat() {
                   type="text" 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={isListening ? "Neural core is listening..." : "Describe a symptom, ask about stats, or medication guidance..."} 
+                  placeholder={isListening ? "Health assistant is listening..." : "Describe a symptom, ask about stats, or medication guidance..."} 
                   className={`w-full pl-10 pr-32 py-6 rounded-[2.5rem] bg-slate-50 border border-slate-100 text-base font-medium focus:outline-none focus:ring-8 focus:ring-blue-500/5 transition-all shadow-inner ${isListening ? 'animate-pulse ring-8 ring-blue-500/10 border-blue-300' : 'hover:bg-slate-100'}`}
                 />
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
@@ -292,13 +292,13 @@ export default function PatientAIChat() {
             transition={{ delay: 0.1 }}
             className="bg-slate-950 rounded-[3.5rem] p-10 shadow-2xl text-white relative overflow-hidden group"
           >
-            <h3 className="text-xl font-black mb-8 relative z-10">Neural Prompts</h3>
+            <h3 className="text-xl font-black mb-8 relative z-10">Quick Prompts</h3>
             <div className="space-y-4 relative z-10">
               {[
                 "Analyze recent vitals",
-                "Metabolic trend report",
+                "Health trend report",
                 "Hydration optimization",
-                "Sleep cycle audit"
+                "Sleep cycle review"
               ].map((topic, i) => (
                 <button 
                   key={i}

@@ -209,10 +209,15 @@ export default function DoctorDashboard() {
   };
 
   const stats = [
-    { label: 'Active Patients', value: '1,284', icon: <Users className="w-5 h-5" />, trend: '+12%', status: 'active', color: 'blue' },
-    { label: 'Today\'s Appointments', value: '42', icon: <Calendar className="w-5 h-5" />, trend: '+5%', status: 'active', color: 'purple' },
-    { label: 'Critical Alerts', value: '08', icon: <AlertCircle className="w-5 h-5" />, trend: '-2%', status: 'critical', color: 'rose' },
-    { label: 'Consultations Done', value: '34', icon: <CheckCircle className="w-5 h-5" />, trend: '+8%', status: 'nominal', color: 'emerald' },
+    { label: 'Active Patients', value: Array.from(new Set(appointments.map(a => a.patient_id))).length.toString(), icon: <Users className="w-5 h-5" />, trend: '+12%', status: 'active', color: 'blue' },
+    { label: 'Today\'s Appointments', value: appointments.filter(a => isSameDay(new Date(a.appointment_date), new Date())).length.toString(), icon: <Calendar className="w-5 h-5" />, trend: '+5%', status: 'active', color: 'purple' },
+    { label: 'Critical Alerts', value: appointments.filter(a => a.status === 'pending').length.toString().padStart(2, '0'), icon: <AlertCircle className="w-5 h-5" />, trend: '-2%', status: 'critical', color: 'rose' },
+    { label: 'Consultations Done', value: appointments.filter(a => a.status === 'completed').length.toString(), icon: <CheckCircle className="w-5 h-5" />, trend: '+8%', status: 'nominal', color: 'emerald' },
+  ];
+
+  const dynamicPriorityDistribution = [
+    { name: 'Urgent', value: appointments.filter(a => a.status === 'accepted').length, color: '#f43f5e' },
+    { name: 'Normal', value: appointments.filter(a => a.status === 'pending').length, color: '#3b82f6' },
   ];
 
   const calendarDays = useMemo(() => {
@@ -315,18 +320,18 @@ export default function DoctorDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200">
-                Clinical Command Center
+                Medical Control Panel
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                System Online
+                System Active
               </div>
             </div>
             <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Dr. Mitchell</span>
+              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Dr. {user?.name?.split(' ')[0] || 'Mitchell'}</span>
             </h1>
             <p className="text-slate-500 font-medium mt-1 text-lg">
-              Your clinical overview for <span className="text-slate-900 font-bold">Monday, Oct 12, 2026</span>
+              Your medical overview for <span className="text-slate-900 font-bold">{format(new Date(), 'EEEE, MMMM do, yyyy')}</span>
             </p>
           </div>
         </motion.div>
@@ -391,8 +396,8 @@ export default function DoctorDashboard() {
           >
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Clinical Throughput</h3>
-                <p className="text-sm text-slate-400 font-medium">Patient volume & urgency distribution</p>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Patient Throughput</h3>
+                <p className="text-sm text-slate-400 font-medium">Daily patient volume & case urgency</p>
               </div>
               <div className="flex bg-slate-100 p-1.5 rounded-2xl">
                 {['7D', '30D', '90D'].map((period) => (
@@ -536,8 +541,8 @@ export default function DoctorDashboard() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/30">
-                    <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient Identity</th>
-                    <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinical Condition</th>
+                    <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient Name</th>
+                    <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason for Visit</th>
                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority</th>
                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>

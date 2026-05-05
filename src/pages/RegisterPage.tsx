@@ -18,9 +18,6 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [authStep, setAuthStep] = useState<'input' | 'biometric' | 'verifying'>('input');
-  const [scanProgress, setScanProgress] = useState(0);
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,7 +35,7 @@ export default function RegisterPage() {
             role: role,
             identity_role: role // Extra flag for trigger reliability
           },
-          emailRedirectTo: window.location.origin + '/login'
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
 
@@ -182,7 +179,7 @@ export default function RegisterPage() {
         >
           {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
             <>
-              {role === 'doctor' ? 'Initialize Registration' : 'Register as Patient'}
+              {role === 'doctor' ? 'Create Doctor Account' : 'Register as Patient'}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </>
           )}

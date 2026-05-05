@@ -42,7 +42,7 @@ import { useState, useEffect } from 'react';
 
 export default function PatientOverview() {
   const { user, activeProfile } = useSelector((state: RootState) => state.auth);
-  const { biometrics, aiSummary, prescriptions, diagnostics } = useSelector((state: RootState) => state.health);
+  const { biometrics, aiSummary, prescriptions, diagnostics, appointments } = useSelector((state: RootState) => state.health);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -78,12 +78,12 @@ export default function PatientOverview() {
     toast.promise(
       new Promise((resolve) => setTimeout(resolve, 2000)),
       {
-        loading: 'Neural core analysis in progress...',
+        loading: 'Health analysis in progress...',
         success: () => {
           dispatch(setAiSummary('Strategic analysis complete: Your cardiovascular recovery rate has optimized by 12%. Metabolic pathways show high efficiency. Recommended: Increase magnesium intake and maintain current sleep hygiene.'));
           return 'AI Insight Regenerated';
         },
-        error: 'Neural sync failed',
+        error: 'Analysis failed',
       }
     );
   };
@@ -105,6 +105,8 @@ export default function PatientOverview() {
       opacity: 1
     }
   };
+
+  const upcomingApts = appointments.slice(0, 2);
 
   return (
     <motion.div 
@@ -131,11 +133,11 @@ export default function PatientOverview() {
             </div>
             <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              Data Sync Active
+              Live Monitoring
             </div>
           </div>
           <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-            Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{user?.name?.split(' ')[0] || 'Piyush'}</span>
+            Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{user?.name?.split(' ')[0] || 'User'}</span>
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-lg">
             Your health metrics are looking <span className="text-emerald-600 font-bold italic">excellent</span> today.
@@ -237,7 +239,7 @@ export default function PatientOverview() {
               </div>
               <h3 className="text-xl font-black text-slate-900 mb-2">Health Index: Optimal</h3>
               <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-[200px]">
-                Your biometric synchronization is performing at peak efficiency.
+                Your health synchronization is performing at peak efficiency.
               </p>
             </div>
 
@@ -246,11 +248,11 @@ export default function PatientOverview() {
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-4">
                     <Shield className="w-5 h-5 text-blue-500" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Sync</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Vault</span>
                   </div>
-                  <h4 className="text-xl font-black mb-2">Vault Integration</h4>
+                  <h4 className="text-xl font-black mb-2">Private Care Vault</h4>
                   <p className="text-xs text-slate-400 font-medium leading-relaxed mb-6">
-                    Records encrypted with multi-layer neural architecture.
+                    Records encrypted with multi-layer architecture.
                   </p>
                   <button 
                     onClick={(e) => { e.stopPropagation(); navigate('/dashboard/security'); }}
@@ -267,7 +269,7 @@ export default function PatientOverview() {
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-4">
                     <Brain className="w-5 h-5 text-blue-100" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Neural Assist</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">AI Assist</span>
                   </div>
                   <h4 className="text-xl font-black mb-2">Personal Concierge</h4>
                   <p className="text-xs text-blue-100 font-medium leading-relaxed">
@@ -287,7 +289,7 @@ export default function PatientOverview() {
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Health Trends</h3>
-                <p className="text-sm text-slate-400 font-medium">Continuous monitoring of your vital signs</p>
+                <p className="text-sm text-slate-400 font-medium">Monitoring of your vital signs</p>
               </div>
               <div className="flex bg-slate-100 p-1.5 rounded-2xl">
                 {['24H', '7D', '30D'].map((period) => (
@@ -367,26 +369,26 @@ export default function PatientOverview() {
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/10 mb-8">
                 <p className="text-blue-50 text-lg font-medium leading-relaxed italic">
-                  "{aiSummary}"
+                  "{aiSummary.replace(/Neural/g, 'Medical').replace(/metabolic synchronization/g, 'metabolic health')}"
                 </p>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-6 border border-white/10">
                   <h4 className="text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Activity className="w-4 h-4" />
-                    Neural Active
+                    Active Insights
                   </h4>
                   <p className="text-blue-100 text-sm font-medium leading-relaxed">
-                    Analyzing real-time sensor streams to optimize metabolic synchronization.
+                    Analyzing real-time vitality streams to optimize health management.
                   </p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-6 border border-white/10">
                   <h4 className="text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    Temporal Sync
+                    Sleep Sync
                   </h4>
                   <p className="text-blue-100 text-sm font-medium leading-relaxed">
-                     circadian rhythm alignment is currently at peak stability levels.
+                     Sleep rhythm alignment is currently at peak stability levels.
                   </p>
                 </div>
               </div>
@@ -402,7 +404,7 @@ export default function PatientOverview() {
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                   <Pill className="w-6 h-6 text-blue-600" />
-                  Medication Adherence
+                  Prescriptions
                 </h3>
                 <ArrowRight className="w-5 h-5 text-slate-300" />
               </div>
@@ -427,7 +429,7 @@ export default function PatientOverview() {
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                   <Brain className="w-6 h-6 text-purple-600" />
-                  Recent AI Diagnostics
+                  Health Analysis
                 </h3>
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               </div>
@@ -471,24 +473,23 @@ export default function PatientOverview() {
           >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900">Upcoming</h3>
-              <button className="text-xs font-bold text-blue-600 hover:text-blue-700">View All</button>
+              <button onClick={() => navigate('/dashboard/appointments')} className="text-xs font-bold text-blue-600 hover:text-blue-700">View All</button>
             </div>
             <div className="space-y-6">
-              {[
-                { doctor: 'Dr. Sarah Mitchell', specialty: 'Cardiologist', time: 'Tomorrow, 10:00 AM', color: 'blue' },
-                { doctor: 'Dr. James Wilson', specialty: 'General Physician', time: 'Oct 15, 02:30 PM', color: 'emerald' },
-              ].map((apt, i) => (
+              {upcomingApts.length > 0 ? upcomingApts.map((apt, i) => (
                 <div key={i} className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:bg-white hover:shadow-lg transition-all">
-                  <div className={`w-12 h-12 rounded-xl bg-${apt.color}-50 text-${apt.color}-600 flex items-center justify-center shrink-0`}>
+                  <div className={`w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0`}>
                     <Calendar className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-sm font-black text-slate-900">{apt.doctor}</div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{apt.specialty}</div>
-                    <div className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{apt.time}</div>
+                    <div className="text-sm font-black text-slate-900">{apt.doctor?.name || 'Practitioner'}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{apt.doctor?.specialty || 'Healthcare'}</div>
+                    <div className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{new Date(apt.appointment_date).toLocaleDateString()}</div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-6 text-slate-400 text-[10px] font-bold uppercase tracking-widest">No upcoming appointments</div>
+              )}
             </div>
           </motion.div>
 

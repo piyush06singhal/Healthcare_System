@@ -81,23 +81,43 @@ const containerVariants = {
 
 export default function DoctorOverview() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { biometrics, appointments: reduxAppointments } = useSelector((state: RootState) => state.health);
+  const { biometrics, appointments: reduxAppointments, practitioners } = useSelector((state: RootState) => state.health);
   const { notifications } = useNotifications();
   const navigate = useNavigate();
   const [networkPatientCount, setNetworkPatientCount] = useState<string>('...');
+  const [practitionerData, setPractitionerData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchPatientCount = async () => {
-      const { count, error } = await supabase
+    const fetchContext = async () => {
+      // Fetch Patient Count
+      const { count } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'patient');
-      if (!error && count !== null) {
-        setNetworkPatientCount(count.toLocaleString());
+      if (count !== null) setNetworkPatientCount(count.toLocaleString());
+
+      // Check if current user is a registered practitioner
+      if (user?.id) {
+        const { data } = await supabase
+          .from('practitioners')
+          .select('*')
+          .eq('email', user.email)
+          .single();
+        setPractitionerData(data);
       }
     };
-    fetchPatientCount();
-  }, []);
+    fetchContext();
+  }, [user]);
+
+  const hasRealData = reduxAppointments.length > 0;
+  
+  // Dynamic Chart Data
+  const dynamicCaseDistribution = [
+    { name: 'Active', value: reduxAppointments.filter(a => a.status === 'accepted').length, color: '#3b82f6' },
+    { name: 'Pending', value: reduxAppointments.filter(a => a.status === 'pending').length, color: '#8b5cf6' },
+    { name: 'Urgent', value: reduxAppointments.filter(a => a.priority === 'urgent' || a.priority === 'critical').length, color: '#ec4899' },
+    { name: 'Complete', value: reduxAppointments.filter(a => a.status === 'completed').length, color: '#10b981' },
+  ];
 
   const latestNotifications = notifications.slice(0, 3);
   const displayFeed = latestNotifications.length > 0 ? latestNotifications.map(n => ({
@@ -107,8 +127,8 @@ export default function DoctorOverview() {
     meta: n.time
   })) : [
     { type: 'critical', title: 'Critical Lab Alert', desc: 'Patient Sarah Jenkins: Elevated Troponin levels detected. Immediate review required.', meta: '2m ago' },
-    { type: 'info', title: 'Lab Synthesis Complete', desc: 'Neural analysis of metabolic panel for John Doe is ready for clinical review.', meta: '15m ago' },
-    { type: 'success', title: 'Profile Synchronized', desc: 'Your clinical credentials have been verified across the regional network.', meta: '1h ago' }
+    { type: 'info', title: 'Test Results Available', desc: 'Metabolic panel results for John Doe are ready for clinical review.', meta: '15m ago' },
+    { type: 'success', title: 'Profile Updated', desc: 'Your medical credentials have been successfully updated in the directory.', meta: '1h ago' }
   ];
 
   const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -148,10 +168,10 @@ export default function DoctorOverview() {
   const criticalAppointments = reduxAppointments.filter(a => a.priority === 'urgent' || a.priority === 'critical');
 
   const stats = [
-    { label: 'Network Patients', value: networkPatientCount, icon: <Users className="w-6 h-6" />, trend: '+12%', status: 'nominal', color: 'blue' },
-    { label: 'Triage Queue', value: reduxAppointments.length.toString(), icon: <Calendar className="w-6 h-6" />, trend: `+${pendingAppointments.length}`, status: 'priority', color: 'purple' },
-    { label: 'Critical Telemetry', value: criticalAppointments.length.toString().padStart(2, '0'), icon: <AlertCircle className="w-6 h-6" />, trend: '-2', status: 'urgent', color: 'rose' },
-    { label: 'Neural Diagnostics', value: '98%', icon: <Brain className="w-6 h-6" />, trend: 'Optimal', status: 'nominal', color: 'emerald' },
+    { label: 'Patient Network', value: networkPatientCount, icon: <Users className="w-6 h-6" />, trend: '+12%', status: 'nominal', color: 'blue' },
+    { label: 'Appointments Today', value: reduxAppointments.length.toString(), icon: <Calendar className="w-6 h-6" />, trend: `+${pendingAppointments.length}`, status: 'priority', color: 'purple' },
+    { label: 'Critical Alerts', value: criticalAppointments.length.toString().padStart(2, '0'), icon: <AlertCircle className="w-6 h-6" />, trend: '-2', status: 'urgent', color: 'rose' },
+    { label: 'System Status', value: 'Live', icon: <Activity className="w-6 h-6" />, trend: 'Optimal', status: 'nominal', color: 'emerald' },
   ];
 
   return (
@@ -161,24 +181,55 @@ export default function DoctorOverview() {
       animate="visible"
       className="space-y-12 pb-20"
     >
+      {/* Notification Banner for Unregistered Practitioners */}
+      <AnimatePresence>
+        {!practitionerData && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-[3rem] text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 mb-8 border border-white/10 group">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 shrink-0">
+                  <Stethoscope className="w-8 h-8 text-white animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-display font-black tracking-tight">Professional Profile Not Set</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Complete your medical profile to start receiving appointments</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/dashboard/staff')}
+                className="px-10 py-5 bg-white text-slate-900 rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-2xl flex items-center gap-3 whitespace-nowrap"
+              >
+                Create Medical Profile
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 border-b border-slate-200/60 pb-12">
         <motion.div variants={itemVariants} className="space-y-6">
           <div className="flex flex-wrap items-center gap-4">
             <div className="px-4 py-1.5 bg-slate-950 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-[0.25em] shadow-xl border border-white/5">
-              Clinical Command Center v3.0
+              Doctor Control Center
             </div>
             <div className="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/5 px-4 py-1.5 rounded-full border border-emerald-500/10">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]"></div>
-              Biometric Sync Active
+              Network Primary Sync
             </div>
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-8xl font-display font-black text-slate-950 tracking-tighter leading-[0.85]">
-            Morning, <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">Dr. {user?.name?.split(' ')[0] || 'Singhal'}</span>
+            Hello, <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">Dr. {user?.name?.split(' ')[0] || 'User'}</span>
           </h1>
           <p className="text-slate-500 font-medium text-lg max-w-xl leading-relaxed">
-            Your clinical environment is synchronized for <span className="text-slate-950 font-bold underline decoration-blue-500/30 underline-offset-4">{format(new Date(), 'EEEE, MMMM do')}</span>. 
+            Your dashboard is ready for <span className="text-slate-950 font-bold underline decoration-blue-500/30 underline-offset-4">{format(new Date(), 'EEEE, MMMM do')}</span>. 
           </p>
         </motion.div>
 
@@ -344,7 +395,7 @@ export default function DoctorOverview() {
             
             <div className="grid gap-6">
               {[
-                { title: 'Follow-up Consultation', patient: 'Sarah Jenkins', time: '14:30', desc: 'Neural link data indicates possible arrhythmia. Review telemetry.' },
+                { title: 'Follow-up Consultation', patient: 'Sarah Jenkins', time: '14:30', desc: 'Vital sign data indicates possible arrhythmia. Review diagnostic trends.' },
                 { title: 'Prescription Sync', patient: 'Unit 07', time: '16:00', desc: 'Automated metabolic sequence complete. Validate prescription adjustments.' }
               ].map((reminder, i) => (
                 <div key={i} className="p-8 rounded-[2.5rem] bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-white/10 backdrop-blur-3xl relative overflow-hidden group">
@@ -381,7 +432,7 @@ export default function DoctorOverview() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-3xl font-display font-black text-slate-950 tracking-tight">Clinical Throughput</h3>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em]">Synthesized patient diagnostics & telemetry</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em]">Synthesized patient diagnostics & vital signs</p>
               </div>
               <div className="flex gap-4">
                 <div className="flex items-center gap-2">
@@ -451,8 +502,8 @@ export default function DoctorOverview() {
            <div className="rounded-[3rem] bg-white p-10 shadow-xl border border-slate-100 relative overflow-hidden flex flex-col h-[400px]">
               <div className="flex items-center justify-between mb-8">
                 <div className="space-y-1">
-                  <h3 className="text-xl font-display font-black text-slate-950 uppercase tracking-tight">Case Distribution</h3>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Diagnostic Load</p>
+                  <h3 className="text-xl font-display font-black text-slate-950 uppercase tracking-tight">Active Case Load</h3>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Live Roster Status</p>
                 </div>
                 <PieChartIcon className="w-5 h-5 text-slate-400" />
               </div>
@@ -461,7 +512,7 @@ export default function DoctorOverview() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={diagnosticDistribution}
+                      data={dynamicCaseDistribution}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -470,7 +521,7 @@ export default function DoctorOverview() {
                       dataKey="value"
                       stroke="none"
                     >
-                      {diagnosticDistribution.map((entry, index) => (
+                      {dynamicCaseDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -480,19 +531,19 @@ export default function DoctorOverview() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <div className="text-2xl font-black text-slate-950">142</div>
-                  <div className="text-[8px] font-black text-slate-400 uppercase">Total Cases</div>
+                  <div className="text-2xl font-black text-slate-950">{reduxAppointments.length}</div>
+                  <div className="text-[8px] font-black text-slate-400 uppercase">Active Cases</div>
                 </div>
               </div>
 
               <div className="space-y-3 mt-6">
-                {diagnosticDistribution.map((item, i) => (
+                {dynamicCaseDistribution.map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                       {item.name}
                     </div>
-                    <span>{item.value}%</span>
+                    <span>{item.value || 0}</span>
                   </div>
                 ))}
               </div>
@@ -529,7 +580,7 @@ export default function DoctorOverview() {
               <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center">
                 <Activity className="w-5 h-5 shadow-lg shadow-blue-600/30" />
               </div>
-              <h3 className="text-xl font-display font-black text-slate-950 uppercase tracking-tight">Live Telemetry: Patient #001</h3>
+              <h3 className="text-xl font-display font-black text-slate-950 uppercase tracking-tight">Live Vitals: Patient #001</h3>
             </div>
             <div className="flex items-center gap-2 text-[8px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
@@ -573,7 +624,7 @@ export default function DoctorOverview() {
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
                 <Brain className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-xl font-display font-black text-white uppercase tracking-tight">Neural Diagnostics</h3>
+              <h3 className="text-xl font-display font-black text-white uppercase tracking-tight">Medical Diagnostics</h3>
             </div>
             <div className="flex items-center gap-2 text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-400/10 px-3 py-1 rounded-full">
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
@@ -618,9 +669,9 @@ export default function DoctorOverview() {
             <button 
               onClick={() => {
                 toast.promise(new Promise(resolve => setTimeout(resolve, 2000)), {
-                  loading: 'Running neural health matrix...',
+                  loading: 'Running health system check...',
                   success: 'System integrity verified: 100%',
-                  error: 'Sync error detected',
+                  error: 'Calibration error detected',
                 });
               }}
               className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-500 transition-all shadow-2xl shadow-blue-600/20"

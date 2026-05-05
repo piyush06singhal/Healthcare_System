@@ -68,7 +68,7 @@ export default function StaffManagement() {
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.specialty || !formData.email) {
-      toast.error('Clinical credentialing requires all fields.');
+      toast.error('All fields are required to create a practitioner profile.');
       return;
     }
 
@@ -77,7 +77,7 @@ export default function StaffManagement() {
         const { error } = await supabase.from('practitioners').update(formData).eq('id', editingId);
         if (error) throw error;
         dispatch(updatePractitioner({ id: editingId, ...formData }));
-        toast.success(`${formData.name}'s medical profile updated in cloud nodes.`);
+        toast.success(`Medical profile for ${formData.name} updated.`);
       } else {
         const { data, error } = await supabase.from('practitioners').insert([formData]).select();
         if (error) throw error;
@@ -85,30 +85,30 @@ export default function StaffManagement() {
         dispatch(addPractitioner(newPractitioner));
         dispatch(addNotification({
           id: `notif-${Date.now()}`,
-          title: 'Network Expansion',
-          message: `${formData.name} has been onboarded to the clinical team.`,
+          title: 'New Staff Member',
+          message: `${formData.name} has joined the medical team.`,
           type: 'success',
           timestamp: new Date().toISOString(),
           read: false
         }));
-        toast.success(`New clinician protocol active for ${formData.name}.`);
+        toast.success(`Professional profile created for ${formData.name}.`);
       }
     } catch (error) {
       console.error("Staff management error:", error);
-      toast.error("Synchronization failure. Local cache only.");
+      toast.error("Failed to save changes. Please try again.");
     }
     setIsModalOpen(false);
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`Revoke ${name}'s clinical access? This will pause all associated neural links.`)) {
+    if (confirm(`Are you sure you want to remove ${name} from the registry?`)) {
       try {
         const { error } = await supabase.from('practitioners').delete().eq('id', id);
         if (error) throw error;
         dispatch(deletePractitioner(id));
-        toast.error(`Practitioner ${name} removed from active roster.`);
+        toast.error(`Practitioner ${name} removed.`);
       } catch (error) {
-        toast.error("De-provisioning failed at cloud level.");
+        toast.error("Failed to remove practitioner.");
       }
     }
   };
@@ -119,18 +119,18 @@ export default function StaffManagement() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-              Medical Staff
+              Medical Directory
             </div>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-950 tracking-tight">Practitioner Roster</h1>
-          <p className="text-slate-500 font-medium mt-2 text-lg">Manage encrypted clinical credentials and staff permissions.</p>
+          <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-950 tracking-tight">Staff Registry</h1>
+          <p className="text-slate-500 font-medium mt-2 text-lg">Manage medical profiles and professional credentials.</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
           className="px-8 py-5 bg-blue-600 text-white rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-3 group"
         >
           <UserPlus className="w-5 h-5" />
-          Onboard Clinician
+          Add Practitioner
         </button>
       </div>
 
@@ -139,7 +139,7 @@ export default function StaffManagement() {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search credentials, specialties, nodes..." 
+            placeholder="Search by name, specialty..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-16 pr-6 py-4 rounded-3xl bg-slate-50 border-none text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all"
@@ -207,7 +207,7 @@ export default function StaffManagement() {
                   </div>
                   <div className="flex items-center gap-3 text-slate-500">
                     <Shield className="w-4 h-4" />
-                    <span className="text-xs font-bold">Node Access Level: Alpha</span>
+                    <span className="text-xs font-bold">Access Level: Staff</span>
                   </div>
                 </div>
 
@@ -232,15 +232,15 @@ export default function StaffManagement() {
       <GenericModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingId ? 'Edit Clinical Node' : 'Initialize Clinician Onboarding'}
-        description="Encrypted staff directory credentialing"
+        title={editingId ? 'Edit Medical Profile' : 'Register New Practitioner'}
+        description="Verify and update practitioner credentials"
       >
         <div className="space-y-6">
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Full Clinical Name</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Full Legal Name</label>
             <input 
               type="text" 
-              placeholder="Dr. Alexander Vance"
+              placeholder="e.g. Dr. Jane Smith"
               className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/5"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -252,7 +252,7 @@ export default function StaffManagement() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Specialization</label>
               <input 
                 type="text" 
-                placeholder="Cardiologist"
+                placeholder="Psychiatrist, Surgeon, etc."
                 className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/5"
                 value={formData.specialty}
                 onChange={(e) => setFormData(prev => ({ ...prev, specialty: e.target.value }))}
@@ -273,10 +273,10 @@ export default function StaffManagement() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Encrypted ID Email</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Professional Email</label>
             <input 
               type="email" 
-              placeholder="vance.a@mediflow.ai"
+              placeholder="official@healthcare.com"
               className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/5"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -287,7 +287,7 @@ export default function StaffManagement() {
             onClick={handleSubmit}
             className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
           >
-            {editingId ? 'Push Updates to Node' : 'Initialize Clinical Node'}
+            {editingId ? 'Update Profile' : 'Create Profile'}
           </button>
         </div>
       </GenericModal>

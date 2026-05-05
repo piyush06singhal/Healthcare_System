@@ -178,8 +178,8 @@ export default function DoctorDiagnostics() {
         <div className="space-y-4">
           <div className="flex items-center gap-4 mb-2">
             <div className="px-4 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              Neural Model v4.2.0
+              <Sparkles className="w-4 h-4" />
+              Advanced AI v4.2.0
             </div>
             <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" />
@@ -250,7 +250,7 @@ export default function DoctorDiagnostics() {
                   </div>
                   <h4 className="text-xl font-black text-slate-900 tracking-tight mb-2">Upload Diagnostic Scan</h4>
                   <p className="text-sm text-slate-400 font-medium max-w-xs mx-auto mb-8">
-                    Drag and drop X-rays, MRIs, or CT scans for immediate neural analysis.
+                    Drag and drop X-rays, MRIs, or CT scans for immediate medical analysis.
                   </p>
                   <button 
                     className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
@@ -284,8 +284,8 @@ export default function DoctorDiagnostics() {
                   </>
                 ) : (
                   <>
-                    <Brain className="w-5 h-5" />
-                    Run Neural Analysis
+                    <Sparkles className="w-5 h-5" />
+                    Run AI Analysis
                   </>
                 )}
               </button>
@@ -422,7 +422,7 @@ export default function DoctorDiagnostics() {
                     <div className="flex items-center justify-between mb-8">
                       <div className="flex items-center gap-3">
                         <Zap className="w-6 h-6 text-indigo-200" />
-                        <span className="text-xs font-black uppercase tracking-widest">Neural Insight</span>
+                        <span className="text-xs font-black uppercase tracking-widest">Medical Insight</span>
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -449,8 +449,8 @@ export default function DoctorDiagnostics() {
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">System Health</h3>
             <div className="space-y-6">
               {[
-                { label: 'Neural Throughput', value: '1.2 GB/s', icon: <Zap className="w-4 h-4" />, color: 'blue' },
-                { label: 'Active Models', value: '14', icon: <Brain className="w-4 h-4" />, color: 'purple' },
+                { label: 'Data Throughput', value: '1.2 GB/s', icon: <Zap className="w-4 h-4" />, color: 'blue' },
+                { label: 'Active Models', value: '14', icon: <Sparkles className="w-4 h-4" />, color: 'purple' },
                 { label: 'Genomic Sync', value: '99.9%', icon: <Dna className="w-4 h-4" />, color: 'emerald' },
               ].map((stat, i) => (
                 <div key={i} className="flex items-center justify-between">
@@ -499,7 +499,7 @@ export default function DoctorDiagnostics() {
             </div>
             <h3 className="text-xl font-black tracking-tight mb-2">HIPAA Secure</h3>
             <p className="text-xs text-white/60 font-medium leading-relaxed mb-6">
-              All neural analysis is performed within a secure, encrypted environment. No PII is transmitted to external models.
+              All diagnostic analysis is performed within a secure, encrypted environment. No PII is transmitted to external models.
             </p>
             <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
               <div className="h-full w-full bg-blue-500" />

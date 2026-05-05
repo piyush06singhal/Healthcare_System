@@ -24,31 +24,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'patient' | 'doctor'>('patient');
   const [loading, setLoading] = useState(false);
-  const [authStep, setAuthStep] = useState<'input' | 'clinical-id' | 'biometric' | 'verifying'>('input');
-  const [clinicalId, setClinicalId] = useState('');
-  const [scanProgress, setScanProgress] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (authStep === 'biometric') {
-      const interval = setInterval(() => {
-        setScanProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => setAuthStep('verifying'), 500);
-            return 100;
-          }
-          return prev + 2;
-        });
-      }, 30);
-      return () => clearInterval(interval);
-    }
-  }, [authStep]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       // 1. Authenticate with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -175,8 +157,8 @@ export default function LoginPage() {
           )}
         </button>
 
-        <div className="pt-8 border-t border-slate-100 text-center">
-          <p className="text-slate-500 font-medium">
+        <div className="pt-8 border-t border-slate-100 italic">
+          <p className="text-slate-500 font-medium text-center">
             Don't have an account? <Link to="/register" className="text-blue-600 font-black hover:text-blue-700 transition-colors">Create account</Link>
           </p>
         </div>

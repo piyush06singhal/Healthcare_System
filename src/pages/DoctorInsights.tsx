@@ -115,8 +115,8 @@ export default function DoctorInsights() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-950 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-[0.25em] shadow-xl border border-white/5">
-            <Brain className="w-3 h-3" />
-            Neural Analytics Engine
+            <TrendingUp className="w-3 h-3" />
+            AI Analytics Engine
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-display font-black text-slate-900 tracking-tighter leading-none">Clinical Insights</h1>
           <p className="text-slate-500 font-medium text-xl max-w-xl leading-relaxed">AI-driven analytics and medical intelligence for your practice.</p>
@@ -136,16 +136,16 @@ export default function DoctorInsights() {
       <div className="grid lg:grid-cols-3 gap-12">
         {/* Left Column: Alerts & Feed */}
         <div className="lg:col-span-2 space-y-12">
-          {/* Enhanced Neural Insight Panel */}
+          {/* Enhanced AI Insight Panel */}
           <motion.div variants={itemVariants} className="card p-12 bg-slate-950 text-white shadow-3xl relative overflow-hidden group">
             <div className="relative z-10 grid lg:grid-cols-2 gap-16">
               <div className="space-y-10">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <Brain className="w-8 h-8" />
+                    <Sparkles className="w-8 h-8" />
                   </div>
                   <div>
-                    <h2 className="text-3xl font-display font-black tracking-tight">Neural Performance</h2>
+                    <h2 className="text-3xl font-display font-black tracking-tight">AI Clinical Insight</h2>
                     <p className="text-[10px] text-blue-400 font-black uppercase tracking-[0.25em]">Predictive Clinical Efficiency v9.0</p>
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export default function DoctorInsights() {
 
               <div className="h-[400px] w-full relative">
                 <div className="absolute top-0 right-0 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-widest text-slate-400">
-                  Real-time Neural Sync
+                  Real-time Data Sync
                 </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={recoveryRateData}>
@@ -344,7 +344,7 @@ export default function DoctorInsights() {
                   <Zap className="w-8 h-8 text-blue-400" />
                 </div>
                 <div className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-500/20">
-                  V4.0 Neural Link
+                  V4.0 Insight Engine
                 </div>
               </div>
               
@@ -366,7 +366,7 @@ export default function DoctorInsights() {
                   <span className="text-lg font-black text-white">Top 0.1%</span>
                 </div>
                 <button className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20">
-                  Optimize Neural Engine
+                  Optimize AI Model
                 </button>
               </div>
             </div>
