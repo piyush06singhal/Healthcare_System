@@ -119,7 +119,7 @@ export default function PatientAIChat() {
         <div className="flex items-center gap-4">
           <div className="px-5 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3">
             <Shield className="w-4 h-4 text-emerald-500" />
-            AES-256 Vault
+            Secure Storage
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function PatientAIChat() {
                       </div>
                     ))}
                   </div>
-                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Synergizing Health Data</span>
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Analyzing Health Data</span>
                 </div>
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function PatientAIChat() {
                       <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
                       <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Synthesizing clinical knowledge...</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Retrieving medical info...</span>
                   </div>
                 </div>
               </motion.div>

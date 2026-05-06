@@ -152,7 +152,7 @@ export default function DoctorMessages() {
           <div className="flex justify-center">
             <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
               <Shield className="w-3 h-3" />
-              End-to-End Encrypted Neural Tunnel
+              End-to-End Encrypted Tunnel
             </div>
           </div>
 
@@ -207,7 +207,7 @@ export default function DoctorMessages() {
           </form>
         </div>
 
-        {/* Neural Ambient Background */}
+        {/* Ambient Background */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-600/5 rounded-full blur-[80px] pointer-events-none" />
       </div>

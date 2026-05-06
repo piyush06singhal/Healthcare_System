@@ -130,7 +130,7 @@ const initialState: HealthState = {
     { id: 'n1', title: 'Biometric Alert', message: 'Heart rate slightly elevated during morning session.', type: 'alert', timestamp: new Date().toISOString(), read: false },
     { id: 'n2', title: 'System Synced', message: 'Clinical data successfully transmitted to Dr. Mitchell.', type: 'success', timestamp: new Date().toISOString(), read: true },
   ],
-  aiSummary: 'Neural analysis of your recent biometrics indicates a 15% improvement in heart rate variability. Your lipid profiles are stabilizing, and consistent hydration is contributing to a high metabolic efficiency score of 88/100.',
+  aiSummary: 'AI analysis of your recent biometrics indicates a 15% improvement in heart rate variability. Your lipid profiles are stabilizing, and consistent hydration is contributing to a high health efficiency score of 88/100.',
   diagnostics: [],
 };
 

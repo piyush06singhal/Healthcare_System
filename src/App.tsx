@@ -25,6 +25,8 @@ const PageLoading = () => (
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
@@ -71,6 +73,16 @@ import Chatbot from './components/Chatbot';
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from 'sonner';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -126,6 +138,7 @@ export default function App() {
       <NotificationProvider>
         <ErrorBoundary>
         <Router>
+          <ScrollToTop />
           <div className="min-h-screen flex flex-col">
             <Suspense fallback={<PageLoading />}>
               <Routes>
@@ -137,6 +150,8 @@ export default function App() {
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/security" element={<Security />} />

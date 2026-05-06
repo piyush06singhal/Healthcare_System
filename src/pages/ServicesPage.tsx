@@ -6,11 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 export default function ServicesPage() {
-  const targetRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start start", "end start"]
-  });
+  const { scrollYProgress } = useScroll();
 
   const { scrollYProgress: pageScrollY } = useScroll();
   const scaleX = useSpring(pageScrollY, {
@@ -25,18 +21,10 @@ export default function ServicesPage() {
   const heroTextY = useTransform(scrollYProgress, [0, 1], [0, -200]);
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
-  const gridRef = useRef(null);
-  const { scrollYProgress: gridScrollY } = useScroll({
-    target: gridRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: gridScrollY } = useScroll();
   const gridY = useTransform(gridScrollY, [0, 1], [50, -50]);
 
-  const processRef = useRef(null);
-  const { scrollYProgress: processScrollY } = useScroll({
-    target: processRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: processScrollY } = useScroll();
   const processY = useTransform(processScrollY, [0, 1], [100, -100]);
 
   const services = [
@@ -82,7 +70,7 @@ export default function ServicesPage() {
       desc: "Track your BMI, BMR, and daily calorie needs with our interactive tools.",
       color: "bg-amber-50",
       glow: "hover:shadow-amber-200/50",
-      image: "https://images.unsplash.com/photo-1504813184591-01592fd03cfd?auto=format&fit=crop&q=80&w=800",
+      image: "https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?auto=format&fit=crop&q=80&w=800",
       path: "/dashboard/calculators"
     },
     { 
@@ -114,7 +102,7 @@ export default function ServicesPage() {
       />
       
       {/* Hero Section */}
-      <section ref={targetRef} className="relative pt-48 pb-32 px-6 overflow-hidden">
+      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
         <motion.div style={{ opacity, y: bgY }} className="absolute inset-0 -z-10">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px] animate-pulse"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-100/40 rounded-full blur-[120px] animate-pulse delay-1000"></div>
@@ -150,7 +138,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Services Grid */}
-      <section ref={gridRef} className="py-24 px-6 relative overflow-hidden">
+      <section className="py-24 px-6 relative overflow-hidden">
         <motion.div 
           style={{ x: useTransform(gridScrollY, [0, 1], [100, -100]) }}
           className="absolute top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none select-none flex items-center"
@@ -199,7 +187,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Process Section */}
-      <section ref={processRef} className="py-40 px-6 bg-slate-50 relative overflow-hidden">
+      <section className="py-40 px-6 bg-slate-50 relative overflow-hidden">
         <motion.div 
           style={{ y: useTransform(processScrollY, [0, 1], [0, 200]) }}
           className="absolute top-0 right-0 w-full h-full -z-10 opacity-20 pointer-events-none"
@@ -277,12 +265,12 @@ export default function ServicesPage() {
               Join thousands of patients who trust MediFlow for their health needs. Get started today with a free consultation.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6">
-              <button className="px-10 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all">
+              <Link to="/doctors" className="px-10 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all">
                 Book Appointment
-              </button>
-              <button className="px-10 py-6 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black uppercase tracking-widest border border-white/10 transition-all">
+              </Link>
+              <Link to="/contact" className="px-10 py-6 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black uppercase tracking-widest border border-white/10 transition-all">
                 Contact Support
-              </button>
+              </Link>
             </div>
           </div>
         </motion.div>

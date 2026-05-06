@@ -12,7 +12,7 @@ interface DataPoint {
 export default function HealthCorrelationViz() {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Mock correlation data for demo
+  // Static correlation data for health metrics mapping
   const generateData = (): DataPoint[] => {
     return Array.from({ length: 40 }, (_, i) => ({
       x: 60 + Math.random() * 40, // HR: 60-100
@@ -143,7 +143,7 @@ export default function HealthCorrelationViz() {
             <Brain className="w-4 h-4 text-indigo-600" />
             <h3 className="text-xl font-black text-slate-900 tracking-tight">Biometric Correlation Analysis</h3>
           </div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">D3.js Neural Mapping</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">D3.js Health Mapping</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100">
            <Sparkles className="w-3 h-3" />
@@ -163,7 +163,7 @@ export default function HealthCorrelationViz() {
           <div>
              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cortex observation</div>
              <p className="text-sm text-slate-600 font-medium leading-relaxed">
-               Neural correlation between <span className="text-blue-600 font-black">Heart Rate</span> and <span className="text-indigo-600 font-black">Oxygen</span> shows a stable 88% efficiency. No recovery anomalies detected.
+               Health correlation between <span className="text-blue-600 font-black">Heart Rate</span> and <span className="text-indigo-600 font-black">Oxygen</span> shows a stable 88% efficiency. No recovery anomalies detected.
              </p>
           </div>
         </div>

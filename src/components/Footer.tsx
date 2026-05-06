@@ -1,9 +1,31 @@
 import { Link } from 'react-router-dom';
-import { Activity, Globe, Lock, Cpu, Shield, Mail, Phone, MapPin, Instagram, Twitter, Linkedin, Facebook } from 'lucide-react';
+import { Activity, Globe, Lock, Cpu, Shield, Mail, Phone, MapPin, Instagram, Twitter, Linkedin, Github, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import axios from 'axios';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setIsSubscribing(true);
+    try {
+      await axios.post('/api/subscribe', { email });
+      toast.success('Successfully subscribed to newsletter!');
+      setEmail('');
+    } catch (error) {
+      toast.error('Subscription failed. Please check your network.');
+      console.error(error);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   return (
     <footer className="bg-slate-950 text-white py-24 px-6 overflow-hidden relative border-t border-white/5">
@@ -29,7 +51,7 @@ export default function Footer() {
             <div className="flex gap-5">
               {[
                 { icon: Twitter, url: "https://x.com/PiyushS07508112" },
-                { icon: Facebook, url: "#" },
+                { icon: Github, url: "https://github.com/piyush06singhal" },
                 { icon: Instagram, url: "https://www.instagram.com/_piyush_singhal12/" },
                 { icon: Linkedin, url: "https://www.linkedin.com/in/piyush--singhal/" }
               ].map((social, i) => (
@@ -82,14 +104,21 @@ export default function Footer() {
                   Join 10,000+ medical professionals receiving our weekly AI health insights.
                 </p>
               </div>
-              <form className="relative" onSubmit={(e) => e.preventDefault()}>
+              <form className="relative" onSubmit={handleSubscribe}>
                 <input 
                   type="email" 
                   placeholder="Your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm font-medium focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
                 />
-                <button className="absolute right-2 top-2 bottom-2 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-blue-600/20 active:scale-95">
-                  Subscribe
+                <button 
+                  type="submit"
+                  disabled={isSubscribing}
+                  className="absolute right-2 top-2 bottom-2 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-blue-600/20 active:scale-95 disabled:opacity-70 flex items-center justify-center min-w-[100px]"
+                >
+                  {isSubscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
                 </button>
               </form>
               <div className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -108,7 +137,7 @@ export default function Footer() {
             </div>
             <div>
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Email Support</div>
-              <div className="text-white font-bold text-sm">piyush.singhal.2004@gmail.com</div>
+              <a href="mailto:piyush.singhal.2004@gmail.com" className="text-white font-bold text-sm hover:text-blue-400 transition-colors">piyush.singhal.2004@gmail.com</a>
             </div>
           </div>
           <div className="flex items-center gap-5 group">
@@ -117,7 +146,7 @@ export default function Footer() {
             </div>
             <div>
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Emergency Line</div>
-              <div className="text-white font-bold text-sm">+91 9694984312</div>
+              <a href="tel:+919694984312" className="text-white font-bold text-sm hover:text-purple-400 transition-colors">+91 9694984312</a>
             </div>
           </div>
           <div className="flex items-center gap-5 group">

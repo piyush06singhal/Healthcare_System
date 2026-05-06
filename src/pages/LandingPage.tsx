@@ -1,16 +1,12 @@
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { useRef } from 'react';
-import { ArrowRight, Shield, Zap, Heart, Activity, Users, Calendar, ChevronRight, Star, CheckCircle2, Play, Globe, Lock, Cpu, Phone, MessageCircle } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Heart, Activity, Users, Star, Globe, Phone, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 export default function LandingPage() {
-  const targetRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start start", "end start"]
-  });
+  const { scrollYProgress } = useScroll();
 
   const { scrollYProgress: pageScrollY } = useScroll();
   const scaleX = useSpring(pageScrollY, {
@@ -27,76 +23,32 @@ export default function LandingPage() {
   const rotate = useTransform(scrollYProgress, [0, 1], [0, 20]);
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
-  const featuresRef = useRef(null);
-  const { scrollYProgress: featuresScrollY } = useScroll({
-    target: featuresRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: featuresScrollY } = useScroll();
   const featuresBgY = useTransform(featuresScrollY, [0, 1], ["-10%", "10%"]);
   const featuresScale = useTransform(featuresScrollY, [0, 0.5, 1], [0.9, 1, 0.9]);
 
-  const doctorsRef = useRef(null);
-  const { scrollYProgress: doctorsScrollY } = useScroll({
-    target: doctorsRef,
-    offset: ["start end", "end start"]
-  });
-  const doctor1Y = useTransform(doctorsScrollY, [0, 1], [0, -100]);
-  const doctor2Y = useTransform(doctorsScrollY, [0, 1], [0, -50]);
-  const doctor3Y = useTransform(doctorsScrollY, [0, 1], [0, -150]);
-
-  const storiesRef = useRef(null);
-  const { scrollYProgress: storiesScrollY } = useScroll({
-    target: storiesRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: storiesScrollY } = useScroll();
   const storiesBgY = useTransform(storiesScrollY, [0, 1], ["-20%", "20%"]);
-
-  const doctors = [
-    {
-      name: "Dr. Sarah Mitchell",
-      specialty: "Pediatrics",
-      experience: "12 Years",
-      reviews: "120+ Reviews",
-      rating: "4.9",
-      image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=800"
-    },
-    {
-      name: "Dr. Rajesh Kumar",
-      specialty: "General Physician",
-      experience: "15 Years",
-      reviews: "250+ Reviews",
-      rating: "4.8",
-      image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=800"
-    },
-    {
-      name: "Dr. Elena Rodriguez",
-      specialty: "Women's Health",
-      experience: "10 Years",
-      reviews: "180+ Reviews",
-      rating: "4.9",
-      image: "https://images.unsplash.com/photo-1527613426441-4da17471b66d?auto=format&fit=crop&q=80&w=800"
-    }
-  ];
 
   const features = [
     { 
       icon: <Zap className="w-8 h-8 text-blue-500" />, 
       title: "AI Symptom Prediction", 
-      desc: "Advanced neural networks to predict potential conditions based on your symptoms with 98% accuracy.",
+      desc: "Advanced medical AI to predict potential conditions based on your symptoms with accuracy.",
       color: "bg-blue-50",
       glow: "hover:glow-primary"
     },
     { 
       icon: <Shield className="w-8 h-8 text-purple-500" />, 
       title: "Secure Health Records", 
-      desc: "End-to-end encrypted medical data management with role-based access control and blockchain security.",
+      desc: "Encrypted medical data management with role-based access control and secure storage.",
       color: "bg-purple-50",
       glow: "hover:glow-secondary"
     },
     { 
       icon: <Heart className="w-8 h-8 text-rose-500" />, 
       title: "Personalized Care", 
-      desc: "Customized health plans and reminders tailored to your unique medical history and lifestyle.",
+      desc: "Customized health plans and reminders tailored to your medical history and lifestyle.",
       color: "bg-rose-50",
       glow: "hover:shadow-rose-200/50"
     },
@@ -108,25 +60,6 @@ export default function LandingPage() {
       glow: "hover:shadow-emerald-200/50"
     },
   ];
-
-  const trustLogos = [
-    { name: "Mayo Clinic", icon: <Globe className="w-5 h-5" /> },
-    { name: "Johns Hopkins", icon: <Activity className="w-5 h-5" /> },
-    { name: "Cleveland Clinic", icon: <Heart className="w-5 h-5" /> },
-    { name: "Stanford Health", icon: <Cpu className="w-5 h-5" /> },
-    { name: "NHS", icon: <Shield className="w-5 h-5" /> },
-    { name: "WHO", icon: <Globe className="w-5 h-5" /> },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
-  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -144,7 +77,7 @@ export default function LandingPage() {
       />
       
       {/* Hero Section */}
-      <section ref={targetRef} className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
         {/* Parallax Background Elements */}
         <motion.div style={{ opacity, y: bgY }} className="absolute inset-0 -z-10">
           <div className="absolute top-[5%] left-[15%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px] animate-pulse"></div>
@@ -158,25 +91,6 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-3 px-5 py-2.5 bg-blue-50/80 backdrop-blur-sm text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-blue-100 shadow-sm hover:shadow-md transition-all cursor-default"
-            >
-              <div className="flex -space-x-2">
-                {[
-                  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
-                  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100",
-                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100"
-                ].map((url, i) => (
-                  <img key={i} src={url} className="w-6 h-6 rounded-full border-2 border-white object-cover" alt="User" referrerPolicy="no-referrer" />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <Heart className="w-3 h-3 fill-current animate-pulse" />
-                Trusted by 10,000+ Families
-              </div>
-            </motion.div>
             <h1 className="text-6xl lg:text-8xl font-black tracking-tight leading-[0.9] mb-8 text-slate-900">
               Trusted Care for <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400">Every Family</span>
@@ -190,12 +104,6 @@ export default function LandingPage() {
                 <span className="relative z-10">Book Appointment</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform relative z-10" />
               </Link>
-              <button className="flex items-center gap-4 font-black text-slate-900 hover:text-blue-600 transition-all group">
-                <div className="w-14 h-14 rounded-full border-2 border-slate-200 flex items-center justify-center group-hover:bg-blue-50 group-hover:border-blue-200 group-hover:scale-110 transition-all shadow-sm group-hover:shadow-md">
-                  <Play className="w-4 h-4 fill-current ml-1 text-blue-600" />
-                </div>
-                <span className="group-hover:translate-x-1 transition-transform">Watch Video</span>
-              </button>
             </div>
           </motion.div>
 
@@ -267,33 +175,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trust Logos Marquee */}
-      <section className="py-20 bg-white border-y border-slate-50 overflow-hidden relative">
-        <motion.div 
-          style={{ x: useTransform(pageScrollY, [0, 1], [0, -200]) }}
-          className="absolute top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none select-none"
-        >
-          <div className="text-[20rem] font-black text-slate-900 whitespace-nowrap">MEDIFLOW TRUSTED PARTNERS</div>
-        </motion.div>
-        <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Collaborating with Global Institutions</p>
-        </div>
-        <div className="relative flex overflow-x-hidden">
-          <div className="animate-marquee flex whitespace-nowrap items-center gap-20">
-            {[...trustLogos, ...trustLogos].map((logo, i) => (
-              <div key={i} className="flex items-center gap-4 group cursor-default">
-                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all duration-500">
-                  {logo.icon}
-                </div>
-                <span className="text-xl font-black text-slate-300 group-hover:text-slate-900 transition-colors duration-500 tracking-tighter">
-                  {logo.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Emergency Banner */}
       <section className="px-6 py-10 relative overflow-hidden">
         <motion.div 
@@ -315,73 +196,27 @@ export default function LandingPage() {
               <a href="tel:102" className="bg-white text-rose-600 px-8 py-4 rounded-2xl font-black text-lg hover:scale-105 transition-transform shadow-xl">
                 Call 102 Now
               </a>
-              <button className="bg-rose-700/50 text-white border-2 border-white/20 px-8 py-4 rounded-2xl font-black text-lg hover:bg-rose-700 transition-colors">
+              <a 
+                href="https://www.google.com/maps/search/?api=1&query=MediFlow+Hospital+Health+Care" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-rose-700/50 text-white border-2 border-white/20 px-8 py-4 rounded-2xl font-black text-lg hover:bg-rose-700 transition-colors flex items-center gap-2"
+              >
                 Get Directions
-              </button>
+                <Globe className="w-5 h-5" />
+              </a>
             </div>
           </div>
         </motion.div>
       </section>
 
-      {/* Doctors Section */}
-      <section ref={doctorsRef} className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <p className="text-blue-600 font-black uppercase tracking-widest text-xs mb-4">Our Specialists</p>
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">World-class doctors dedicated to your health.</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            {doctors.map((doc, i) => (
-              <motion.div 
-                key={i}
-                style={{ y: i === 0 ? doctor1Y : i === 1 ? doctor2Y : doctor3Y }}
-                whileHover={{ y: -10 }}
-                className="bg-white rounded-[3rem] overflow-hidden shadow-xl border border-slate-100 group"
-              >
-                <div className="relative h-80 overflow-hidden">
-                  <img 
-                    src={doc.image} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                    alt={doc.name}
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 text-sm font-black text-slate-900">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    {doc.rating}
-                  </div>
-                </div>
-                <div className="p-8">
-                  <div className="text-blue-600 font-black text-xs uppercase tracking-widest mb-2">{doc.specialty}</div>
-                  <h3 className="text-2xl font-black text-slate-900 mb-4">{doc.name}</h3>
-                  <div className="flex items-center justify-between text-slate-500 text-sm font-bold">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      {doc.experience}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      {doc.reviews}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section - Bento Grid Style */}
-      <section ref={featuresRef} className="py-40 px-6 bg-slate-50/50 relative overflow-hidden">
+      <section className="py-40 px-6 relative overflow-hidden">
         <motion.div 
-          style={{ y: featuresBgY }}
-          className="absolute top-0 left-0 w-full h-full -z-10 opacity-30"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="max-w-7xl mx-auto"
         >
-          <div className="absolute top-20 left-10 w-96 h-96 bg-blue-200 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-200 rounded-full blur-[100px]"></div>
-        </motion.div>
-        
-        <motion.div style={{ scale: featuresScale }} className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-32">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -412,7 +247,7 @@ export default function LandingPage() {
                 </div>
                 <h4 className="text-4xl font-black mb-6 text-slate-900">AI Symptom Prediction</h4>
                 <p className="text-xl text-slate-500 leading-relaxed font-medium max-w-xl mb-10">
-                  Advanced neural networks to predict potential conditions based on your symptoms with 98% accuracy. Our system processes millions of data points to give you instant insights.
+                  Advanced medical AI to predict potential conditions based on your symptoms with 98% accuracy. Our system processes millions of data points to give you instant insights.
                 </p>
                 <Link to="/dashboard/ai-chat" className="inline-flex items-center gap-3 font-black text-xs uppercase tracking-widest text-blue-600 group/btn">
                   Explore AI Engine
@@ -489,13 +324,13 @@ export default function LandingPage() {
                     Verified medical professionals across various specializations ready to assist you in minutes.
                   </p>
                   <Link to="/doctors" className="px-8 py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform inline-block">
-                    Find a Specialist
+                    Find an Expert Doctor
                   </Link>
                 </div>
                 <div className="flex -space-x-4">
                   {[
-                    "https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=200",
                     "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200",
+                    "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=200",
                     "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200",
                     "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200"
                   ].map((url, i) => (
@@ -517,7 +352,7 @@ export default function LandingPage() {
       </section>
 
       {/* Success Stories Scrolling Cards */}
-      <section ref={storiesRef} className="py-40 px-6 bg-slate-900 overflow-hidden relative">
+      <section className="py-40 px-6 bg-slate-900 overflow-hidden relative">
         <motion.div 
           style={{ y: storiesBgY }}
           className="absolute top-0 left-0 w-full h-full -z-10 opacity-10"
@@ -649,7 +484,7 @@ export default function LandingPage() {
           <MessageCircle className="w-7 h-7" />
         </motion.button>
         <motion.a 
-          href="tel:+919876543210" 
+          href="tel:+919694984312" 
           whileHover={{ scale: 1.1, rotate: -15 }}
           whileTap={{ scale: 0.9 }}
           className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 group relative"

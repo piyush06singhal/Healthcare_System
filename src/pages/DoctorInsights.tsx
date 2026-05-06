@@ -184,7 +184,7 @@ export default function DoctorInsights() {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={recoveryRateData}>
                     <defs>
-                      <linearGradient id="neuralGradient" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="clinicalGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                       </linearGradient>
@@ -205,7 +205,7 @@ export default function DoctorInsights() {
                       dataKey="rate" 
                       stroke="#3b82f6" 
                       strokeWidth={4} 
-                      fill="url(#neuralGradient)"
+                      fill="url(#clinicalGradient)"
                       animationDuration={2000}
                     />
                     <Area 

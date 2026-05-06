@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Heart, LogOut, Shield, Activity, ChevronDown, Globe, Phone, Search, Bell, Clock, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Menu, X, Heart, LogOut, Shield, Activity, ChevronDown, Globe, Phone, FileText } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { logout } from '../store/authSlice';
@@ -14,9 +14,6 @@ export default function Navbar() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const location = useLocation();
-  const { notifications, unreadCount, markAsRead, clearAll } = useNotifications();
-
-  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -32,7 +29,7 @@ export default function Navbar() {
       dropdown: [
         { name: 'Online Consultations', icon: <Phone className="w-4 h-4" />, desc: 'Video calls with experts', path: '/doctors' },
         { name: 'AI Symptom Checker', icon: <Activity className="w-4 h-4" />, desc: 'Instant health insights', path: '/dashboard/ai-chat' },
-        { name: 'Medical Insights', icon: <Search className="w-4 h-4" />, desc: 'Verified AI research', path: '/dashboard/insights' },
+        { name: 'Medical Insights', icon: <FileText className="w-4 h-4" />, desc: 'Verified AI research', path: '/dashboard/insights' },
         { name: 'Video Generation', icon: <Globe className="w-4 h-4" />, desc: 'AI educational videos', path: '/dashboard/video-gen' },
         { name: 'Health Records', icon: <Shield className="w-4 h-4" />, desc: 'Secure digital storage', path: '/dashboard/records' },
       ]
@@ -60,7 +57,7 @@ export default function Navbar() {
               <span className="text-xl font-black tracking-tighter text-slate-900 leading-none uppercase">MediFlow</span>
               <div className="flex items-center gap-1.5 mt-1">
                 <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-600">Quantum Core</span>
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-600">Health Core</span>
               </div>
             </div>
           </Link>
@@ -120,83 +117,8 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right Actions */}
+            {/* Right Actions */}
           <div className="flex items-center gap-4 shrink-0">
-            <div className="hidden xl:flex items-center gap-2">
-              <button className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors bg-white/50 rounded-xl border border-white/50">
-                <Search className="w-4 h-4" />
-              </button>
-              <div className="relative">
-                <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className={`w-10 h-10 flex items-center justify-center transition-all relative rounded-xl border border-white/50 ${showNotifications ? 'bg-slate-900 text-white shadow-lg' : 'bg-white/50 text-slate-500 hover:text-slate-900'}`}
-                >
-                  <Bell className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {showNotifications && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-4 w-96 bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-2xl border border-white/50 overflow-hidden z-50"
-                    >
-                      <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Telemetry Feed</h3>
-                        <button 
-                          onClick={clearAll}
-                          className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
-                        >
-                          Purge All
-                        </button>
-                      </div>
-                      <div className="max-h-[450px] overflow-y-auto no-scrollbar">
-                        {notifications.length > 0 ? (
-                          notifications.map((notif) => (
-                            <div 
-                              key={notif.id} 
-                              onClick={() => markAsRead(notif.id)}
-                              className="p-6 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group cursor-pointer"
-                            >
-                              <div className="flex gap-5">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
-                                  notif.type === 'urgent' ? 'bg-rose-50 text-rose-600' :
-                                  notif.type === 'success' ? 'bg-emerald-50 text-emerald-600' :
-                                  notif.type === 'reminder' ? 'bg-amber-50 text-amber-600' :
-                                  'bg-blue-50 text-blue-600'
-                                }`}>
-                                  {notif.type === 'urgent' ? <AlertCircle className="w-5 h-5" /> :
-                                   notif.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> :
-                                   notif.type === 'reminder' ? <Clock className="w-5 h-5" /> :
-                                   <Info className="w-5 h-5" />}
-                                </div>
-                                <div className="space-y-1.5">
-                                  <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{notif.title}</div>
-                                  <p className="text-[10px] font-bold text-slate-500 leading-relaxed">{notif.message}</p>
-                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest pt-1">{notif.time}</div>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-16 text-center">
-                            <Bell className="w-12 h-12 text-slate-200 mx-auto mb-6" />
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Feed is clear</p>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-            
-            <div className="h-6 w-px bg-slate-200 hidden xl:block mx-1 opacity-50"></div>
-            
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
                 <Link 

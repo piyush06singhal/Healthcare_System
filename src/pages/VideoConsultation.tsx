@@ -255,7 +255,7 @@ export default function VideoConsultation() {
                 onClick={() => setIsJoined(true)}
                 className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-600/20 transition-all"
               >
-                {isDoctor ? 'Initialize Neural Link' : 'Join Consultation'}
+                {isDoctor ? 'Initialize Consultation' : 'Join Consultation'}
               </button>
             </motion.div>
           </div>

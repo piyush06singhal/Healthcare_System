@@ -62,7 +62,7 @@ export default function PatientAppointments() {
 
   const allAppointments = useMemo(() => {
     // Combine DB appointments and Redux (local/newly booked) appointments
-    // For demo purposes, we prioritize local UI state for "real time" feel
+    // Prioritize local UI state for immediate feedback
     return [...reduxAppointments, ...dbAppointments];
   }, [dbAppointments, reduxAppointments]);
 
@@ -172,7 +172,7 @@ export default function PatientAppointments() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {loading && dbAppointments.length === 0 ? (
           <div className="col-span-full p-20 text-center text-slate-400 font-black uppercase tracking-widest text-xs">
-            Synchronizing neural schedule...
+            Synchronizing schedule...
           </div>
         ) : filteredAppointments.length === 0 ? (
           <div className="col-span-full p-20 text-center text-slate-400 font-black uppercase tracking-widest text-xs">
@@ -255,7 +255,7 @@ export default function PatientAppointments() {
         isOpen={isBookModalOpen} 
         onClose={() => setIsBookModalOpen(false)}
         title="Clinical Reservation"
-        description="Book a new neural consultation slot"
+        description="Book a new clinical consultation slot"
       >
         <div className="space-y-6">
           <div className="space-y-3">

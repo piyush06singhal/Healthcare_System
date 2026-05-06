@@ -41,7 +41,7 @@ export default function DoctorAIChat() {
   const [messages, setMessages] = useState<Message[]>([
     { 
       id: '1', 
-      text: "Connection Established. I am your **Clinical AI Assistant**. I can help you analyze patient data, optimize your schedule, or draft clinical notes. How can I assist your practice today?", 
+      text: "Connection Established. I am your **Clinical AI Assistant**. I can help you analyze patient data, manage your schedule, or draft clinical notes. How can I assist you today?", 
       sender: 'ai', 
       timestamp: new Date() 
     }
@@ -103,7 +103,7 @@ export default function DoctorAIChat() {
 
     recognition.onstart = () => {
       setIsListening(true);
-      toast.info('Audio link active...');
+      toast.info('Listening...');
     };
 
     recognition.onresult = (event: any) => {
@@ -116,7 +116,7 @@ export default function DoctorAIChat() {
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
-      toast.error('Audio uplink failed: ' + event.error);
+      toast.error('Voice input failed: ' + event.error);
     };
 
     recognition.onend = () => {
@@ -202,7 +202,7 @@ export default function DoctorAIChat() {
   };
 
   const quickActions = [
-    { label: 'Analyze Schedule', icon: <Calendar className="w-4 h-4" />, prompt: 'Analyze my schedule for today and suggest optimizations.' },
+    { label: 'Summarize Schedule', icon: <Calendar className="w-4 h-4" />, prompt: 'Analyze my schedule for today and suggest optimizations.' },
     { label: 'Patient Summary', icon: <Users className="w-4 h-4" />, prompt: 'Provide a summary of my high-priority patients for today.' },
     { label: 'Clinical Notes', icon: <FileText className="w-4 h-4" />, prompt: 'Help me draft clinical notes for my last appointment.' },
     { label: 'Drug Interactions', icon: <Zap className="w-4 h-4" />, prompt: 'Check for potential drug interactions for a patient on Metformin and Lisinopril.' },
@@ -215,11 +215,11 @@ export default function DoctorAIChat() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.25em] shadow-2xl">
-              Clinical Assistant Link
+              AI Assistant
             </div>
             <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-              Encrypted Session
+              Secure Session
             </div>
             <div className="flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
               <Info className="w-4 h-4" />
@@ -230,8 +230,8 @@ export default function DoctorAIChat() {
         </div>
         <div className="flex items-center gap-6 bg-white p-6 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 hover:scale-105 transition-transform duration-500">
           <div className="text-right space-y-1">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Processing Power</div>
-            <div className="text-lg font-black text-blue-600 uppercase tracking-widest">98.4 TFLOPS</div>
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Medical Intelligence</div>
+            <div className="text-lg font-black text-blue-600 uppercase tracking-widest">Active</div>
           </div>
           <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center shadow-2xl">
             <Brain className="w-8 h-8 text-blue-400" />

@@ -1,8 +1,10 @@
-import { Search, Filter, Star, MapPin, Calendar, ArrowRight, CheckCircle2, Heart, Shield, Users, Clock, MessageSquare, BookOpen, TrendingUp, Zap } from 'lucide-react';
+import { Search, Filter, Star, MapPin, Calendar, ArrowRight, CheckCircle2, Heart, Shield, Users, Clock, MessageSquare, BookOpen, TrendingUp, Zap, Loader2 } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { toast } from 'sonner';
+import axios from 'axios';
 
 const posts = [
   {
@@ -63,9 +65,29 @@ const posts = [
 
 export default function BlogPage() {
   const targetRef = useRef<HTMLDivElement>(null);
-  const featuredRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const newsletterRef = useRef<HTMLDivElement>(null);
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setIsSubscribing(true);
+    try {
+      await axios.post('/api/subscribe', { email });
+      toast.success('Successfully subscribed! You will receive newsletters at ' + email);
+      setEmail('');
+    } catch (error) {
+      toast.error('Failed to subscribe. Please try again.');
+      console.error(error);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const handleReadMore = (title: string) => {
+    toast.info(`Full article for "${title}" is coming soon! Stay tuned for our deep dive.`);
+  };
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -74,32 +96,20 @@ export default function BlogPage() {
     restDelta: 0.001
   });
 
-  const { scrollYProgress: heroScrollY } = useScroll({
-    target: targetRef,
-    offset: ["start start", "end start"]
-  });
+  const { scrollYProgress: heroScrollY } = useScroll();
 
   const opacity = useTransform(heroScrollY, [0, 0.5], [1, 0]);
   const scale = useTransform(heroScrollY, [0, 0.5], [1, 0.9]);
   const bgY = useTransform(heroScrollY, [0, 1], ["0%", "50%"]);
   const heroTextY = useTransform(heroScrollY, [0, 1], ["0%", "100%"]);
 
-  const { scrollYProgress: featuredScrollY } = useScroll({
-    target: featuredRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: featuredScrollY } = useScroll();
   const featuredY = useTransform(featuredScrollY, [0, 1], [100, -100]);
 
-  const { scrollYProgress: gridScrollY } = useScroll({
-    target: gridRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: gridScrollY } = useScroll();
   const gridY = useTransform(gridScrollY, [0, 1], [50, -50]);
 
-  const { scrollYProgress: newsletterScrollY } = useScroll({
-    target: newsletterRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: newsletterScrollY } = useScroll();
   const newsletterY = useTransform(newsletterScrollY, [0, 1], [100, -100]);
 
   return (
@@ -113,7 +123,7 @@ export default function BlogPage() {
       />
       
       {/* Hero Section */}
-      <section ref={targetRef} className="relative pt-48 pb-32 px-6 overflow-hidden">
+      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
         <motion.div style={{ opacity, y: bgY }} className="absolute inset-0 -z-10">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px] animate-pulse"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-100/40 rounded-full blur-[120px] animate-pulse delay-1000"></div>
@@ -149,7 +159,7 @@ export default function BlogPage() {
       </section>
 
       {/* Featured Post */}
-      <section ref={featuredRef} className="py-12 px-6 relative overflow-hidden">
+      <section className="py-12 px-6 relative overflow-hidden">
         <motion.div 
           style={{ x: useTransform(featuredScrollY, [0, 1], [-100, 100]) }}
           className="absolute top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none select-none flex items-center"
@@ -184,7 +194,10 @@ export default function BlogPage() {
               </div>
               <h2 className="text-4xl lg:text-5xl font-black tracking-tight mb-6 leading-tight">The Impact of Telemedicine on Global Health Access</h2>
               <p className="text-slate-400 mb-10 text-lg font-medium leading-relaxed">How remote consultations are breaking down geographical barriers and providing quality healthcare to underserved populations worldwide.</p>
-              <button className="flex items-center gap-4 font-black text-xs uppercase tracking-widest group">
+              <button 
+                onClick={() => handleReadMore("The Impact of Telemedicine on Global Health Access")}
+                className="flex items-center gap-4 font-black text-xs uppercase tracking-widest group"
+              >
                 Read Full Article
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
               </button>
@@ -195,7 +208,7 @@ export default function BlogPage() {
       </section>
 
       {/* Blog Grid */}
-      <section ref={gridRef} className="py-24 px-6 relative overflow-hidden">
+      <section className="py-24 px-6 relative overflow-hidden">
         <motion.div 
           style={{ x: useTransform(gridScrollY, [0, 1], [100, -100]) }}
           className="absolute top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none select-none flex items-center"
@@ -246,7 +259,10 @@ export default function BlogPage() {
                       </div>
                       <span className="text-xs font-black text-slate-900">{post.author}</span>
                     </div>
-                    <button className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl flex items-center justify-center transition-all">
+                    <button 
+                      onClick={() => handleReadMore(post.title)}
+                      className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl flex items-center justify-center transition-all"
+                    >
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   </div>
@@ -258,7 +274,7 @@ export default function BlogPage() {
       </section>
 
       {/* Newsletter Section */}
-      <section ref={newsletterRef} className="py-40 px-6 relative overflow-hidden">
+      <section className="py-40 px-6 relative overflow-hidden">
         <motion.div 
           style={{ y: newsletterY }}
           className="max-w-7xl mx-auto bg-slate-50 rounded-[4rem] p-16 lg:p-24 relative overflow-hidden"
@@ -269,17 +285,30 @@ export default function BlogPage() {
               <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-6 tracking-tight leading-tight">Subscribe to Our <br /> Health Newsletter</h2>
               <p className="text-xl text-slate-500 font-medium leading-relaxed">Get the latest health insights and expert advice delivered straight to your inbox every week.</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4">
               <input 
                 type="email" 
                 placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 className="flex-1 px-8 py-6 bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium shadow-xl"
               />
-              <button className="px-10 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-3 group">
-                Subscribe
-                <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <button 
+                type="submit"
+                disabled={isSubscribing}
+                className="px-10 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-3 group disabled:opacity-70"
+              >
+                {isSubscribing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    Subscribe
+                    <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </>
+                )}
               </button>
-            </div>
+            </form>
           </div>
         </motion.div>
       </section>

@@ -34,13 +34,13 @@ export default function PatientTreatments() {
     dispatch(addNotification({
       id: `notif-protocol-${Date.now()}`,
       title: 'Protocol Analysis Initialized',
-      message: `A request for a new treatment blueprint regarding "${protocolData.condition}" has been logged. Neural generation starting within 1-2 clinical hours.`,
+      message: `A request for a new treatment blueprint regarding "${protocolData.condition}" has been logged. AI generation starting within 1-2 clinical hours.`,
       type: 'info',
       timestamp: new Date().toISOString(),
       read: false
     }));
 
-    toast.success(`Request for "${protocolData.condition}" protocol submitted. Neural core processing...`);
+    toast.success(`Request for "${protocolData.condition}" protocol submitted. AI core processing...`);
     setIsProtocolModalOpen(false);
     setProtocolData({ condition: '', priority: 'Standard' });
   };
@@ -163,12 +163,12 @@ export default function PatientTreatments() {
           >
             <div className="relative z-10 text-center">
               <Sparkles className="w-12 h-12 text-blue-400 mx-auto mb-6" />
-              <h3 className="text-xl font-black mb-4">Neural Recovery Optimization</h3>
+              <h3 className="text-xl font-black mb-4">AI Recovery Optimization</h3>
               <p className="text-slate-400 text-xs font-medium leading-relaxed mb-8">
                  treatment efficacy is currently synced at <span className="text-white font-bold">92% stability</span>.
               </p>
               <button 
-                onClick={() => toast.success('Neural optimization sequence started. Protocol adjustment imminent.')}
+                onClick={() => toast.success('Optimization sequence started. Protocol adjustment imminent.')}
                 className="w-full py-4 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105"
               >
                 Optimize Schedule
@@ -239,7 +239,7 @@ export default function PatientTreatments() {
           <div className="p-6 bg-slate-900 rounded-[2rem] border border-white/5 space-y-4">
              <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-blue-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-white">Neural Analysis Active</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">AI Analysis Active</span>
              </div>
              <p className="text-[10px] font-medium text-slate-400 leading-relaxed">
                MediFlow AI will synthesize your historical biometrics with global peer-reviewed data to generate a custom recovery roadmap.

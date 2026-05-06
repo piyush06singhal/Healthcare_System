@@ -81,7 +81,7 @@ export default function Profile() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-950 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-[0.25em] border border-white/5 shadow-xl">
               <User className="w-3 h-3" />
-              Neural Link Identity
+              Verified Profile
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black text-slate-950 tracking-tighter">Clinical Profile</h1>
             <p className="text-slate-500 font-medium text-lg max-w-xl leading-relaxed">Synchronize your professional identity and clinical credentials across the MediFlow network.</p>
@@ -176,10 +176,9 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  {/* Neural ID Card - Digital Identity */}
-                  <div className="relative group">
-                    <div className="relative w-full h-80 bg-slate-950 rounded-[3rem] overflow-hidden shadow-2xl transition-all duration-700">
-                      {/* Circuit Background */}
+                  {/* Digital Identity Card */}
+                <div className="relative w-full h-80 bg-slate-950 rounded-[3rem] overflow-hidden shadow-2xl transition-all duration-700">
+                      {/* Grid Background */}
                       <div className="absolute inset-0 opacity-10">
                         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_0)] bg-[size:40px_40px]" />
                       </div>
@@ -187,8 +186,8 @@ export default function Profile() {
                       <div className="absolute inset-0 p-12 flex flex-col justify-between">
                         <div className="flex justify-between items-start">
                           <div className="space-y-2">
-                             <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-4">Neural Identity Fragment</div>
-                             <div className="text-3xl font-display font-black text-white tracking-widest">MEDIFLOW OS</div>
+                             <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-4">Identity Card</div>
+                             <div className="text-3xl font-display font-black text-white tracking-widest">MEDIFLOW HEALTH</div>
                           </div>
                           <div className="w-16 h-16 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-center">
                             <Activity className="w-8 h-8 text-blue-400 animate-pulse" />
@@ -198,17 +197,17 @@ export default function Profile() {
                         <div className="flex items-end justify-between">
                           <div className="space-y-6">
                             <div>
-                              <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Authenticated Entity</div>
+                              <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Authenticated Account</div>
                               <div className="text-2xl font-black text-white uppercase tracking-tighter">{user?.name}</div>
                             </div>
                             <div className="flex gap-12">
                               <div>
-                                <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Clinical Clearance</div>
-                                <div className="text-sm font-black text-blue-400 uppercase">Level 4 ALPHA</div>
+                                <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Account Level</div>
+                                <div className="text-sm font-black text-blue-400 uppercase">PREMIUM</div>
                               </div>
                               <div>
-                                <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Expiration</div>
-                                <div className="text-sm font-black text-white uppercase font-mono">2032 // INF</div>
+                                <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Status</div>
+                                <div className="text-sm font-black text-white uppercase font-mono">ACTIVE</div>
                               </div>
                             </div>
                           </div>
@@ -216,12 +215,11 @@ export default function Profile() {
                             <div className="w-24 h-24 bg-white p-2 rounded-2xl shadow-xl">
                               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=mediflow-auth-${user?.id}`} className="w-full h-full" alt="QR Auth" />
                             </div>
-                            <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.4em] text-right">Biometric Hash: 0x7E...4D2</div>
+                            <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.4em] text-right">Reference: {user?.id?.slice(0, 8)}</div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
                   <div className="grid md:grid-cols-2 gap-10">
                     <div className="space-y-3">
@@ -249,7 +247,7 @@ export default function Profile() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Emergency Uplink</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Contact Number</label>
                       <div className="relative group">
                         <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                         <input 

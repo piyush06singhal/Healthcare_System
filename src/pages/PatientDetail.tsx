@@ -273,7 +273,7 @@ export default function PatientDetail() {
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/10">
             {aiSummary ? (
               <p className="text-sm leading-relaxed font-medium text-blue-50">
-                {aiSummary.replace(/Neural/g, 'Medical')}
+                {aiSummary}
               </p>
             ) : (
               <div className="text-center py-4">

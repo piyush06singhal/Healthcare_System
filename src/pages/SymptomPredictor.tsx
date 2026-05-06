@@ -119,7 +119,7 @@ export default function SymptomPredictor() {
             AI Diagnostics
           </motion.div>
           <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Symptom Analysis</h1>
-          <p className="text-slate-500 font-medium max-w-md">Neural network processing of clinical symptoms for preliminary diagnostic insights.</p>
+          <p className="text-slate-500 font-medium max-w-md">AI engine processing of clinical symptoms for preliminary diagnostic insights.</p>
         </div>
         
         <div className="flex items-center gap-4">
@@ -233,7 +233,7 @@ export default function SymptomPredictor() {
               <span className="relative z-10 flex items-center gap-3">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
                   <>
-                    Execute Neural Analysis
+                    Analyze Symptoms
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -384,7 +384,7 @@ export default function SymptomPredictor() {
                 <div className="space-y-2">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Output Pending</h3>
                   <p className="text-xs text-slate-500 font-medium max-w-[250px] leading-relaxed">
-                    Enter your symptoms and execute the neural analysis to view system predictions.
+                    Enter your symptoms and analyze symptoms to view system predictions.
                   </p>
                 </div>
                 

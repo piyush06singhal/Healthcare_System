@@ -11,7 +11,9 @@ import {
   Fingerprint, 
   Shield, 
   Cpu, 
-  CheckCircle2 
+  CheckCircle2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import AuthLayout from '../components/AuthLayout';
 import { setCredentials } from '../store/authSlice';
@@ -22,6 +24,7 @@ import { toast } from 'sonner';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'patient' | 'doctor'>('patient');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -97,7 +100,7 @@ export default function LoginPage() {
         <button
           onClick={() => setRole('doctor')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            role === 'doctor' ? 'bg-slate-900 text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+            role === 'doctor' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           <Stethoscope className="w-4 h-4" />
@@ -112,11 +115,11 @@ export default function LoginPage() {
         <div className="space-y-2">
           <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
           <div className="relative group">
-            <Mail className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${role === 'doctor' ? 'text-slate-400 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-600'}`} />
+            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors text-slate-400 group-focus-within:text-blue-600" />
             <input 
               type="email" 
               required
-              className={`input-field pl-14 ${role === 'doctor' ? 'focus:border-slate-900' : ''}`} 
+              className="input-field pl-14" 
               placeholder={role === 'doctor' ? "doctor@mediflow.ai" : "patient@mediflow.com"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -130,24 +133,29 @@ export default function LoginPage() {
             <Link to="/forgot-password" title="Forgot password?" className="text-xs font-bold text-blue-600 hover:text-blue-700">Forgot Password?</Link>
           </div>
           <div className="relative group">
-            <Lock className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${role === 'doctor' ? 'text-slate-400 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-600'}`} />
+            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors text-slate-400 group-focus-within:text-blue-600" />
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               required
-              className={`input-field pl-14 ${role === 'doctor' ? 'focus:border-slate-900' : ''}`} 
+              className="input-field pl-14 pr-12" 
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
         <button 
           type="submit" 
           disabled={loading}
-          className={`btn-primary w-full flex items-center justify-center gap-3 py-5 text-lg group shadow-xl active:scale-[0.98] transition-all ${
-            role === 'doctor' ? 'bg-slate-900 hover:bg-slate-800 shadow-slate-900/20 text-blue-400' : ''
-          }`}
+          className="btn-primary w-full flex items-center justify-center gap-3 py-5 text-lg group shadow-xl active:scale-[0.98] transition-all"
         >
           {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
             <>

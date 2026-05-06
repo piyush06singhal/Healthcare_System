@@ -253,7 +253,7 @@ export default function MedicalRecords() {
                       <h2 className="text-3xl font-black text-slate-900 tracking-tight">{viewingAnalysis.name}</h2>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">{viewingAnalysis.category}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Analyzed by MediFlow Neural Core 2.0</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Analyzed by MediFlow AI Core 2.0</span>
                       </div>
                     </div>
                   </div>
@@ -340,7 +340,7 @@ export default function MedicalRecords() {
 
                   <div className="p-10 rounded-[3rem] bg-slate-950 text-white relative overflow-hidden">
                     <div className="relative z-10">
-                      <h4 className="text-xl font-black mb-4">Neural Clinical Insight</h4>
+                      <h4 className="text-xl font-black mb-4">AI Clinical Insight</h4>
                       <p className="text-slate-400 text-base leading-relaxed font-medium">
                         Based on your results, we recommend increasing your dietary fiber intake and scheduling a follow-up for your Fasting Plasma Glucose, which is slightly elevated. Your metabolic efficiency remains high at 88/100.
                       </p>

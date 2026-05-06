@@ -266,7 +266,7 @@ export default function DoctorAppointments() {
                               Symptomatic Context
                             </h4>
                             <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm leading-relaxed text-slate-600">
-                              {apt.reason || 'Patient presenting with recurring symptoms requiring neural baseline sync. Initial intake suggests metabolic variance.'}
+                              {apt.reason || 'Patient presenting with recurring symptoms requiring baseline sync. Initial intake suggests metabolic variance.'}
                             </div>
                           </div>
 
@@ -274,7 +274,7 @@ export default function DoctorAppointments() {
                             <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
                               <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Risk Profile</div>
                               <div className="flex flex-wrap gap-2">
-                                {['Hypertension', 'Genetic Marker B4', 'Neural Stress'].map(risk => (
+                                {['Hypertension', 'Genetic Marker B4', 'Stress Levels'].map(risk => (
                                   <span key={risk} className="px-3 py-1 bg-rose-50 text-rose-600 text-[8px] font-black uppercase tracking-widest rounded-lg border border-rose-100">
                                     {risk}
                                   </span>
@@ -299,7 +299,7 @@ export default function DoctorAppointments() {
                             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                               <Brain className="w-5 h-5" />
                             </div>
-                            <h5 className="text-sm font-black uppercase tracking-widest">Neural Insights</h5>
+                            <h5 className="text-sm font-black uppercase tracking-widest">Clinical Insights</h5>
                           </div>
                           
                           <div className="space-y-6">

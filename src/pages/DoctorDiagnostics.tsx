@@ -5,6 +5,7 @@ import {
   Upload, 
   FileText, 
   Zap, 
+  Sparkles,
   AlertCircle, 
   CheckCircle2, 
   TrendingUp,
@@ -187,7 +188,7 @@ export default function DoctorDiagnostics() {
             </div>
           </div>
           <h1 className="text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none">AI Diagnostics</h1>
-          <p className="text-slate-500 font-medium text-xl max-w-xl leading-relaxed">Advanced neural analysis for clinical imaging and diagnostics. Upload scans for immediate AI-driven insights.</p>
+          <p className="text-slate-500 font-medium text-xl max-w-xl leading-relaxed">Advanced analysis for clinical imaging and diagnostics. Upload scans for immediate AI-driven insights.</p>
         </div>
       </div>
 
@@ -413,7 +414,7 @@ export default function DoctorDiagnostics() {
                         ))}
                       </div>
                       <p className="text-[10px] text-white/50 leading-relaxed">
-                        Neural markers suggest a 14% correlation with hereditary markers. Metabolic sequence sync optional.
+                        Findings suggest a 14% correlation with hereditary markers. Metabolic health review recommended.
                       </p>
                     </div>
                   </div>
@@ -449,9 +450,9 @@ export default function DoctorDiagnostics() {
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">System Health</h3>
             <div className="space-y-6">
               {[
-                { label: 'Data Throughput', value: '1.2 GB/s', icon: <Zap className="w-4 h-4" />, color: 'blue' },
+                { label: 'Data Processing', value: '1.2 GB/s', icon: <Zap className="w-4 h-4" />, color: 'blue' },
                 { label: 'Active Models', value: '14', icon: <Sparkles className="w-4 h-4" />, color: 'purple' },
-                { label: 'Genomic Sync', value: '99.9%', icon: <Dna className="w-4 h-4" />, color: 'emerald' },
+                { label: 'Health Sync', value: '99.9%', icon: <Dna className="w-4 h-4" />, color: 'emerald' },
               ].map((stat, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

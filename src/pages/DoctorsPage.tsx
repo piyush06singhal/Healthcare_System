@@ -34,7 +34,7 @@ const doctors = [
     rating: 5.0,
     reviews: 215,
     location: "Chicago, USA",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1527613426441-4da17471b66d?auto=format&fit=crop&q=80&w=800",
     tags: ["Children", "Vaccination"]
   },
   {
@@ -56,49 +56,27 @@ const doctors = [
     tags: ["Mental Health", "Therapy"]
   },
   {
-    name: "Dr. James Miller",
-    specialty: "Orthopedic",
-    rating: 4.8,
-    reviews: 112,
-    location: "Seattle, USA",
-    image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=800",
-    tags: ["Bones", "Sports"]
+    name: "Dr. Emily Brown",
+    specialty: "Neurologist",
+    rating: 5.0,
+    reviews: 98,
+    location: "Boston, USA",
+    image: "https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=800",
+    tags: ["Brain", "Nerves"]
   }
 ];
 
 export default function DoctorsPage() {
-  const targetRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start start", "end start"]
-  });
-
-  const { scrollYProgress: pageScrollY } = useScroll();
-  const scaleX = useSpring(pageScrollY, {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
   });
 
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
-  const y = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
-  const heroTextY = useTransform(scrollYProgress, [0, 1], [0, -200]);
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-
-  const featuredRef = useRef(null);
-  const { scrollYProgress: featuredScrollY } = useScroll({
-    target: featuredRef,
-    offset: ["start end", "end start"]
-  });
-  const featuredX = useTransform(featuredScrollY, [0, 1], [100, -100]);
-
-  const gridRef = useRef(null);
-  const { scrollYProgress: gridScrollY } = useScroll({
-    target: gridRef,
-    offset: ["start end", "end start"]
-  });
-  const gridY = useTransform(gridScrollY, [0, 1], [50, -50]);
+  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const y = useTransform(scrollYProgress, [0, 0.2], [0, -50]);
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -173,13 +151,13 @@ export default function DoctorsPage() {
       />
       
       {/* Hero Section */}
-      <section ref={targetRef} className="relative pt-48 pb-32 px-6 overflow-hidden">
+      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
         <motion.div style={{ opacity, y: bgY }} className="absolute inset-0 -z-10">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px] animate-pulse"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-100/40 rounded-full blur-[120px] animate-pulse delay-1000"></div>
         </motion.div>
 
-        <motion.div style={{ scale, y: heroTextY }} className="max-w-7xl mx-auto text-center">
+        <motion.div style={{ y }} className="max-w-7xl mx-auto text-center">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -209,9 +187,8 @@ export default function DoctorsPage() {
       </section>
 
       {/* Featured Doctors Horizontal Scroll */}
-      <section ref={featuredRef} className="py-20 px-6 bg-slate-50 overflow-hidden relative">
+      <section className="py-20 px-6 bg-slate-50 overflow-hidden relative">
         <motion.div 
-          style={{ x: featuredX }}
           className="absolute top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none select-none flex items-center"
         >
           <div className="text-[20rem] font-black text-slate-900 whitespace-nowrap">TOP RATED SPECIALISTS</div>
@@ -233,38 +210,45 @@ export default function DoctorsPage() {
           </div>
         </div>
         
-        <div className="flex gap-8 overflow-x-auto pb-12 px-6 no-scrollbar snap-x snap-mandatory">
-          {doctors.slice(0, 4).map((doc, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="min-w-[300px] md:min-w-[400px] bg-white rounded-[3rem] p-8 shadow-xl border border-slate-100 snap-center group hover:glow-primary transition-all duration-500"
-            >
-              <div className="flex items-center gap-6 mb-8">
-                <div className="w-24 h-24 rounded-[2rem] overflow-hidden flex-shrink-0 border-4 border-slate-50">
-                  <img src={doc.image} className="w-full h-full object-cover" alt={doc.name} referrerPolicy="no-referrer" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 mb-1">{doc.name}</h3>
-                  <p className="text-blue-600 font-black text-[10px] uppercase tracking-widest">{doc.specialty}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                    <span className="text-xs font-black text-slate-900">{doc.rating}</span>
-                    <span className="text-xs text-slate-400 font-bold">({doc.reviews} reviews)</span>
+        <div className="relative flex overflow-hidden">
+          <motion.div 
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ 
+              duration: 40, 
+              ease: "linear", 
+              repeat: Infinity 
+            }}
+            className="flex gap-8 pr-8"
+          >
+            {[...doctors, ...doctors].map((doc, i) => (
+              <motion.div 
+                key={i}
+                className="w-[300px] md:w-[450px] flex-shrink-0 bg-white rounded-[3rem] p-8 shadow-xl border border-slate-100 group hover:glow-primary transition-all duration-500 cursor-pointer"
+                onClick={() => setSelectedDoctor(doc)}
+              >
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="w-24 h-24 rounded-[2rem] overflow-hidden flex-shrink-0 border-4 border-slate-50">
+                    <img src={doc.image} className="w-full h-full object-cover" alt={doc.name} referrerPolicy="no-referrer" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 mb-1">{doc.name}</h3>
+                    <p className="text-blue-600 font-black text-[10px] uppercase tracking-widest">{doc.specialty}</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                      <span className="text-xs font-black text-slate-900">{doc.rating}</span>
+                      <span className="text-xs text-slate-400 font-bold">({doc.reviews} reviews)</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
-                Expert in {doc.tags.join(", ")} with a focus on patient-centered clinical excellence.
-              </p>
-              <button className="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-600 hover:text-white transition-all">
-                View Full Profile
-              </button>
-            </motion.div>
-          ))}
+                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 line-clamp-2">
+                  Expert in {doc.tags.join(", ")} with a focus on patient-centered clinical excellence.
+                </p>
+                <button className="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl font-black uppercase tracking-widest text-[10px] group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  View Full Profile
+                </button>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -318,8 +302,8 @@ export default function DoctorsPage() {
       </section>
 
       {/* Doctors Grid */}
-      <section ref={gridRef} className="py-24 px-6 relative">
-        <motion.div style={{ y: gridY }} className="max-w-7xl mx-auto">
+      <section className="py-24 px-6 relative">
+        <div className="max-w-7xl mx-auto">
           {filteredDoctors.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
               {filteredDoctors.map((doc, i) => (
@@ -402,19 +386,19 @@ export default function DoctorsPage() {
               </button>
             </div>
           )}
-        </motion.div>
+        </div>
       </section>
 
       {/* Trust Section */}
       <section className="py-40 px-6 bg-slate-50 relative overflow-hidden">
         <motion.div 
-          style={{ y: useTransform(pageScrollY, [1500, 3000], [0, 200]) }}
+          style={{ y: useTransform(scrollYProgress, [1500, 3000], [0, 200]) }}
           className="absolute top-0 right-0 w-full h-full -z-10 opacity-5 pointer-events-none"
         >
           <div className="text-[25rem] font-black text-blue-900/10 whitespace-nowrap rotate-12">TRUSTED CARE</div>
         </motion.div>
         <motion.div 
-          style={{ y: useTransform(pageScrollY, [2000, 3500], [0, -100]) }}
+          style={{ y: useTransform(scrollYProgress, [2000, 3500], [0, -100]) }}
           className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center"
         >
           <div>

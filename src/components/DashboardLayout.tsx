@@ -371,7 +371,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center">
                      <Bell className="w-8 h-8 text-slate-400" />
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Neural feed quiet</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Activity feed quiet</p>
                 </div>
               ) : (
                 notifications.map((notif) => (

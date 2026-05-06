@@ -1,6 +1,7 @@
-import { Mail, Phone, MapPin, Send, Globe, MessageSquare, Clock, Shield, Star, ChevronDown, Facebook, Twitter, Instagram, Linkedin, ChevronRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Globe, MessageSquare, Clock, Shield, Star, ChevronDown, Github, Twitter, Instagram, Linkedin, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 import { useState, useRef } from 'react';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -45,15 +46,30 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
-    
-    // Reset success message after 5 seconds
-    setTimeout(() => setIsSubmitted(false), 5000);
+    try {
+      await axios.post('/api/contact', {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message
+      });
+      
+      setIsSubmitted(true);
+      setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
+      setTimeout(() => setIsSubmitted(false), 5000);
+    } catch (error: any) {
+      console.error('Contact form error:', error);
+      const serverMsg = error.response?.data?.error;
+      const details = error.response?.data?.details;
+      
+      if (serverMsg) {
+        alert(`${serverMsg}${details ? '\n\nDetails: ' + details : ''}`);
+      } else {
+        alert('Failed to send message via secure relay. Please try again later.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const faqs = [
@@ -133,16 +149,22 @@ export default function ContactPage() {
 
                 <div className="grid sm:grid-cols-2 gap-8">
                   {[
-                    { icon: <Phone className="w-6 h-6" />, label: "Call Us", value: "+91 9694984312", color: "text-blue-600" },
-                    { icon: <Mail className="w-6 h-6" />, label: "Email Us", value: "piyush.singhal.2004@gmail.com", color: "text-emerald-600" },
-                    { icon: <MapPin className="w-6 h-6" />, label: "Visit Us", value: "Jaipur, Rajasthan, India", color: "text-purple-600" },
-                    { icon: <Clock className="w-6 h-6" />, label: "Working Hours", value: "24/7 Support", color: "text-amber-600" },
+                    { icon: <Phone className="w-6 h-6" />, label: "Call Us", value: "+91 9694984312", color: "text-blue-600", link: "tel:+919694984312" },
+                    { icon: <Mail className="w-6 h-6" />, label: "Email Us", value: "piyush.singhal.2004@gmail.com", color: "text-emerald-600", link: "mailto:piyush.singhal.2004@gmail.com" },
+                    { icon: <MapPin className="w-6 h-6" />, label: "Visit Us", value: "Jaipur, Rajasthan, India", color: "text-purple-600", link: "https://maps.app.goo.gl/jaipur" },
+                    { icon: <MessageSquare className="w-6 h-6" />, label: "WhatsApp", value: "+91 9694984312", color: "text-green-500", link: "https://wa.me/919694984312" },
                   ].map((item, i) => (
-                    <div key={i} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 hover:shadow-xl transition-all group">
+                    <a 
+                      key={i} 
+                      href={item.link}
+                      target={item.link.startsWith('http') ? "_blank" : undefined}
+                      rel={item.link.startsWith('http') ? "noopener noreferrer" : undefined}
+                      className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 hover:shadow-xl transition-all group block"
+                    >
                       <div className={`${item.color} mb-4 group-hover:scale-110 transition-transform`}>{item.icon}</div>
                       <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</div>
                       <div className="text-lg font-black text-slate-900 break-all">{item.value}</div>
-                    </div>
+                    </a>
                   ))}
                 </div>
 
@@ -152,7 +174,7 @@ export default function ContactPage() {
                     <p className="opacity-80 mb-8 font-medium">Follow us on social media for the latest updates and health tips.</p>
                     <div className="flex gap-4">
                       {[
-                        { icon: Facebook, url: "#" },
+                        { icon: Github, url: "https://github.com/piyush06singhal" },
                         { icon: Twitter, url: "https://x.com/PiyushS07508112" },
                         { icon: Instagram, url: "https://www.instagram.com/_piyush_singhal12/" },
                         { icon: Linkedin, url: "https://www.linkedin.com/in/piyush--singhal/" }

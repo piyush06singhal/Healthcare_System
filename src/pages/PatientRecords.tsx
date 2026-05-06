@@ -72,14 +72,14 @@ export default function PatientRecords() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200">
-              Temporal Audit
+              Medical History
             </div>
             <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
               <Shield className="w-3 h-3" />
-              End-to-End Encrypted
+              Secure Storage
             </div>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Clinical Timeline</h1>
+          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Health Records</h1>
           <p className="text-slate-500 font-medium mt-2 text-lg">Secure chronological access to your comprehensive health history.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -94,11 +94,11 @@ export default function PatientRecords() {
             />
           </div>
           <button 
-            onClick={() => toast.success('Initializing secure upload protocol...')}
+            onClick={() => toast.success('Initializing secure upload...')}
             className="w-full sm:w-auto px-8 py-5 bg-slate-900 text-white rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-2xl shadow-slate-900/10 flex items-center justify-center gap-3 group"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-            Transmit Data
+            Upload Records
           </button>
         </div>
       </div>

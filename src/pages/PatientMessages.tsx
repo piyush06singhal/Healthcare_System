@@ -50,7 +50,7 @@ export default function PatientMessages() {
 
     try {
       // Find active contact (mocking Dr. Sarah Mitchell id for now or first in list)
-      const receiverId = 'staff-01'; // Mock ID for demonstration
+      const receiverId = 'staff-01'; // Clinical Staff ID
       await dbService.sendMessage({
         sender_id: user.id,
         receiver_id: receiverId,

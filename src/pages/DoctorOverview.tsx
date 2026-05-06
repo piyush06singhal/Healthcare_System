@@ -402,7 +402,7 @@ export default function DoctorOverview() {
                   <div className="relative z-10 flex flex-col gap-6">
                     <div className="flex items-center justify-between">
                       <div className="px-3 py-1 bg-blue-500 text-white rounded-full text-[8px] font-black uppercase tracking-widest">
-                        Neural Suggestion
+                        AI Suggestion
                       </div>
                       <div className="text-lg font-black text-white">{reminder.time}</div>
                     </div>

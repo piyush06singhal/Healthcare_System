@@ -80,7 +80,7 @@ export default function PatientOverview() {
       {
         loading: 'Health analysis in progress...',
         success: () => {
-          dispatch(setAiSummary('Strategic analysis complete: Your cardiovascular recovery rate has optimized by 12%. Metabolic pathways show high efficiency. Recommended: Increase magnesium intake and maintain current sleep hygiene.'));
+          dispatch(setAiSummary('Strategic analysis complete: Your cardiovascular recovery rate has improved by 12%. Metabolic pathways show high efficiency. Recommended: Increase magnesium intake and maintain current sleep hygiene.'));
           return 'AI Insight Regenerated';
         },
         error: 'Analysis failed',
@@ -234,7 +234,7 @@ export default function PatientOverview() {
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-5xl font-black text-slate-900 leading-none">88</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Stability</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Health Index</span>
                 </div>
               </div>
               <h3 className="text-xl font-black text-slate-900 mb-2">Health Index: Optimal</h3>
@@ -250,9 +250,9 @@ export default function PatientOverview() {
                     <Shield className="w-5 h-5 text-blue-500" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Vault</span>
                   </div>
-                  <h4 className="text-xl font-black mb-2">Private Care Vault</h4>
+                  <h4 className="text-xl font-black mb-2">Secure Health Vault</h4>
                   <p className="text-xs text-slate-400 font-medium leading-relaxed mb-6">
-                    Records encrypted with multi-layer architecture.
+                    Records encrypted with multi-layer security architecture.
                   </p>
                   <button 
                     onClick={(e) => { e.stopPropagation(); navigate('/dashboard/security'); }}
@@ -369,7 +369,7 @@ export default function PatientOverview() {
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/10 mb-8">
                 <p className="text-blue-50 text-lg font-medium leading-relaxed italic">
-                  "{aiSummary.replace(/Neural/g, 'Medical').replace(/metabolic synchronization/g, 'metabolic health')}"
+                  "{aiSummary}"
                 </p>
               </div>
               <div className="grid md:grid-cols-2 gap-6">

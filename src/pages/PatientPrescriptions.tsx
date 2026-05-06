@@ -78,7 +78,7 @@ export default function PatientPrescriptions() {
             </div>
             <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              Synced with Pharm-AI
+              Synced with Pharmacy
             </div>
           </div>
           <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">Medications</h1>
@@ -185,7 +185,7 @@ export default function PatientPrescriptions() {
               </div>
               <h3 className="text-xl font-black mb-4">Safety Protocol</h3>
               <p className="text-slate-400 text-xs font-medium leading-relaxed mb-8">
-                Your neural core is cross-referencing your prescriptions with live biometrics to prevent interactions.
+                Your AI assistant is cross-referencing your prescriptions with your health data to prevent interactions.
               </p>
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
@@ -223,8 +223,8 @@ export default function PatientPrescriptions() {
       <GenericModal
         isOpen={isRefillModalOpen}
         onClose={() => setIsRefillModalOpen(false)}
-        title="Pharmacy Sync"
-        description="Initialize medication re-supply sequence"
+        title="Pharmacy Request"
+        description="Request a medication refill"
       >
         <div className="space-y-6">
           <div className="space-y-3">
@@ -280,7 +280,7 @@ export default function PatientPrescriptions() {
           <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3">
             <Stethoscope className="w-5 h-5 text-blue-600 shrink-0" />
             <p className="text-[10px] font-medium text-blue-700 leading-relaxed">
-              Neural verification will be requested from your prescribing physician. Priority requests may incur additional processing biometrics.
+              Verification will be requested from your prescribing physician. Priority requests will be processed as quickly as possible.
             </p>
           </div>
 

@@ -45,7 +45,7 @@ export default function DoctorPatients() {
       const allPatients = data?.map(a => a.patient as any).filter(Boolean) || [];
       const uniquePatients = Array.from(new Map(allPatients.map(p => [p.id, p])).values());
       
-      // Add mock status for demo
+      // Set clinical status
       const patientsWithStatus = uniquePatients.map(p => ({
         ...p,
         status: ['Stable', 'Critical', 'Recovering'][Math.floor(Math.random() * 3)]

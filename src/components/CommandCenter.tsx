@@ -28,13 +28,13 @@ export default function CommandCenter({ isOpen, onClose }: { isOpen: boolean; on
   const { user } = useSelector((state: RootState) => state.auth);
 
   const mainActions = [
-    { id: 'nodes', label: 'Neural Dashboard', path: '/dashboard', icon: Activity, keywords: 'home overview charts' },
+    { id: 'nodes', label: 'Health Dashboard', path: '/dashboard', icon: Activity, keywords: 'home overview charts' },
     { id: 'vault', label: 'Medical Records', path: '/dashboard/records', icon: FileText, keywords: 'docs labs results' },
     { id: 'comms', label: 'Clinical Comms', path: '/dashboard/messages', icon: MessageSquare, keywords: 'chat doctor talk' },
     { id: 'prescriptions', label: 'RX Center', path: '/dashboard/prescriptions', icon: Pill, keywords: 'meds pills pharmacy' },
     { id: 'ai', label: 'AI Health Agent', path: '/dashboard/ai-chat', icon: Sparkles, keywords: 'help bot assistant' },
     { id: 'appointments', label: 'Scheduler', path: '/dashboard/appointments', icon: Calendar, keywords: 'book visit doctor' },
-    { id: 'identity', label: 'Neural Profile', path: '/dashboard/profile', icon: User, keywords: 'me self settings' },
+    { id: 'identity', label: 'User Profile', path: '/dashboard/profile', icon: User, keywords: 'me self settings' },
     { id: 'security', label: 'Protocols', path: '/dashboard/security', icon: Shield, keywords: 'privacy keys safety' },
     { id: 'video', label: 'Telehealth', path: '/dashboard/video-consultation', icon: Video, keywords: 'call meeting online' },
     { id: 'help', label: 'Knowledge Base', path: '/help', icon: Sparkles, keywords: 'help support guide documentation' },
@@ -88,7 +88,7 @@ export default function CommandCenter({ isOpen, onClose }: { isOpen: boolean; on
               <input 
                 autoFocus
                 type="text"
-                placeholder="Search neural endpoints (e.g. 'lab results', 'appointments')..."
+                placeholder="Search services (e.g. 'lab results', 'appointments')..."
                 className="flex-1 bg-transparent border-none text-2xl font-black text-slate-900 placeholder:text-slate-300 focus:ring-0"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -134,7 +134,7 @@ export default function CommandCenter({ isOpen, onClose }: { isOpen: boolean; on
                     <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
                       <Search className="w-8 h-8 text-slate-300" />
                     </div>
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No Neural Results Found</p>
+                    <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No Results Found</p>
                   </div>
                 )}
               </div>

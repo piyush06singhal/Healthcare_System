@@ -6,11 +6,7 @@ import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { useRef } from 'react';
 
 export default function AboutPage() {
-  const targetRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start start", "end start"]
-  });
+  const { scrollYProgress } = useScroll();
 
   const { scrollYProgress: pageScrollY } = useScroll();
   const scaleX = useSpring(pageScrollY, {
@@ -25,18 +21,10 @@ export default function AboutPage() {
   const heroTextY = useTransform(scrollYProgress, [0, 1], [0, -200]);
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
-  const missionRef = useRef(null);
-  const { scrollYProgress: missionScrollY } = useScroll({
-    target: missionRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: missionScrollY } = useScroll();
   const missionY = useTransform(missionScrollY, [0, 1], [100, -100]);
 
-  const valuesRef = useRef(null);
-  const { scrollYProgress: valuesScrollY } = useScroll({
-    target: valuesRef,
-    offset: ["start end", "end start"]
-  });
+  const { scrollYProgress: valuesScrollY } = useScroll();
   const valuesY = useTransform(valuesScrollY, [0, 1], [50, -50]);
 
   const stats = [
@@ -57,7 +45,7 @@ export default function AboutPage() {
       />
       
       {/* Hero Section */}
-      <section ref={targetRef} className="relative pt-48 pb-32 px-6 overflow-hidden">
+      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
         <motion.div style={{ opacity, y: bgY }} className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/50 rounded-full blur-[100px] animate-pulse"></div>
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-100/50 rounded-full blur-[100px] animate-pulse delay-700"></div>
@@ -90,7 +78,7 @@ export default function AboutPage() {
               transition={{ delay: 0.2 }}
               className="text-xl text-slate-500 max-w-2xl leading-relaxed font-medium"
             >
-              MediFlow AI was established to bridge the gap between advanced computational intelligence and clinical practice. We build the infrastructure for the next generation of healthcare.
+              MediFlow AI was established to bridge the gap between advanced medical intelligence and clinical practice. We build the infrastructure for the next generation of healthcare.
             </motion.p>
           </div>
           <motion.div
@@ -112,12 +100,12 @@ export default function AboutPage() {
       </section>
 
       {/* Mission Section */}
-      <section ref={missionRef} className="py-32 px-6 bg-slate-50/50 overflow-hidden relative">
+      <section className="py-32 px-6 bg-slate-50/50 overflow-hidden relative">
         <motion.div 
           style={{ x: useTransform(missionScrollY, [0, 1], [-100, 100]) }}
           className="absolute top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none select-none flex items-center"
         >
-          <div className="text-[20rem] font-black text-slate-900 whitespace-nowrap">OUR MISSION ARCHITECTURE</div>
+          <div className="text-[20rem] font-black text-slate-900 whitespace-nowrap">OUR MEDICAL MISSION</div>
         </motion.div>
         <motion.div style={{ y: missionY }} className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
           <motion.div
@@ -140,8 +128,8 @@ export default function AboutPage() {
                 },
                 { 
                   icon: <Zap className="w-6 h-6" />, 
-                  title: "Neural Efficiency", 
-                  desc: "Optimizing clinical workflows through high-performance AI models and automated data processing.",
+                  title: "Clinical Efficiency", 
+                  desc: "Optimizing clinical workflows through high-performance AI models and automated medical processing.",
                   color: "text-rose-600",
                   bg: "bg-rose-100"
                 },
@@ -203,7 +191,7 @@ export default function AboutPage() {
       </section>
 
       {/* Core Values Section */}
-      <section ref={valuesRef} className="py-32 px-6 bg-slate-900 overflow-hidden relative">
+      <section className="py-32 px-6 bg-slate-900 overflow-hidden relative">
         <motion.div 
           style={{ y: useTransform(valuesScrollY, [0, 1], [0, 200]) }}
           className="absolute top-0 right-0 w-full h-full -z-10 opacity-10 pointer-events-none"
@@ -253,60 +241,6 @@ export default function AboutPage() {
             ))}
           </div>
         </motion.div>
-      </section>
-
-      {/* Team Section */}
-      <section className="py-40 px-6 relative overflow-hidden">
-        <motion.div 
-          style={{ y: useTransform(pageScrollY, [1500, 3000], [0, 200]) }}
-          className="absolute top-0 right-0 w-full h-full -z-10 opacity-10"
-        >
-          <div className="absolute top-[30%] right-[5%] w-96 h-96 bg-rose-400 rounded-full blur-[120px] animate-pulse"></div>
-          <div className="absolute bottom-[30%] left-[5%] w-96 h-96 bg-blue-400 rounded-full blur-[120px] animate-pulse delay-1000"></div>
-          <div className="text-[20rem] font-black text-slate-900/5 whitespace-nowrap -rotate-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">LEADERSHIP</div>
-        </motion.div>
-
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-24">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-block px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-blue-100"
-            >
-              The Minds Behind MediFlow
-            </motion.div>
-            <h2 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tight leading-none">Our Leadership Team</h2>
-            <p className="text-xl text-slate-500 font-medium mt-6 max-w-2xl mx-auto">A diverse group of medical experts, engineers, and visionaries dedicated to redefining healthcare.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
-            {[
-              { name: "Dr. Marcus Chen", role: "Chief Medical Officer", image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=800" },
-              { name: "Sarah Jenkins", role: "Head of AI Engineering", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" },
-              { name: "Dr. Elena Rossi", role: "Director of Clinical Research", image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=800" },
-              { name: "David Miller", role: "Chief Technology Officer", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800" }
-            ].map((member, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="group relative"
-              >
-                <div className="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white group-hover:border-blue-600 transition-all duration-500">
-                  <img src={member.image} className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" alt={member.name} referrerPolicy="no-referrer" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
-                  <div className="absolute bottom-8 left-8 right-8">
-                    <h3 className="text-2xl font-black text-white mb-1">{member.name}</h3>
-                    <p className="text-blue-400 font-black text-[10px] uppercase tracking-widest">{member.role}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* Stats Section */}

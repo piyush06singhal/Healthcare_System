@@ -26,7 +26,7 @@ export default function PatientOnboarding({ onComplete }: { onComplete: () => vo
   const nextStep = () => {
     if (step < 3) setStep(step + 1);
     else {
-      toast.success('Clinical profile synchronized with neural core.');
+      toast.success('Clinical profile synchronized.');
       onComplete();
     }
   };
@@ -45,7 +45,7 @@ export default function PatientOnboarding({ onComplete }: { onComplete: () => vo
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Neural Intake</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Health Intake</h2>
                 <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mt-1">Step {step} of 3</div>
               </div>
             </div>
@@ -66,8 +66,8 @@ export default function PatientOnboarding({ onComplete }: { onComplete: () => vo
                 className="space-y-8"
               >
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Biological Identity</h3>
-                  <p className="text-slate-500 text-sm font-medium">Verify your core biological markers for accurate diagnostics.</p>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Basic Info</h3>
+                  <p className="text-slate-500 text-sm font-medium">Verify your medical markers for accurate diagnostics.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -149,7 +149,7 @@ export default function PatientOnboarding({ onComplete }: { onComplete: () => vo
               onClick={nextStep}
               className="px-10 py-5 bg-slate-950 text-white rounded-[1.75rem] text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 flex items-center gap-3"
             >
-              {step === 3 ? 'Initialize Profile' : 'Next Protocol'}
+              {step === 3 ? 'Complete Profile' : 'Next Step'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

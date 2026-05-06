@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Mail, Lock, User, ArrowRight, Loader2, Stethoscope } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, Stethoscope, Eye, EyeOff } from 'lucide-react';
 import AuthLayout from '../components/AuthLayout';
 import { setCredentials } from '../store/authSlice';
 import { supabase } from '../lib/supabase';
@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'patient' | 'doctor'>('patient');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -91,7 +92,7 @@ export default function RegisterPage() {
       title={role === 'doctor' ? "Doctor Registration" : "Patient Registration"} 
       subtitle={role === 'doctor' ? "Join our network of healthcare professionals." : "Access personalized healthcare services and insights."}
     >
-      <div className={`flex p-1 rounded-2xl mb-8 transition-colors ${role === 'doctor' ? 'bg-slate-900' : 'bg-slate-100'}`}>
+      <div className="flex p-1 rounded-2xl mb-8 transition-colors bg-slate-100">
         <button
           type="button"
           onClick={() => setRole('patient')}
@@ -106,7 +107,7 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setRole('doctor')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            role === 'doctor' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-400'
+            role === 'doctor' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-400'
           }`}
         >
           <Stethoscope className="w-4 h-4" />
@@ -126,13 +127,13 @@ export default function RegisterPage() {
         )}
         
         <div className="space-y-2">
-          <label className={`text-xs font-black uppercase tracking-widest ml-1 ${role === 'doctor' ? 'text-slate-500' : 'text-slate-400'}`}>Full Name</label>
+          <label className="text-xs font-black uppercase tracking-widest ml-1 text-slate-400">Full Name</label>
           <div className="relative group">
-            <User className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${role === 'doctor' ? 'text-slate-600 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-600'}`} />
+            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors text-slate-400 group-focus-within:text-blue-600" />
             <input 
               type="text" 
               required
-              className={`input-field pl-14 ${role === 'doctor' ? 'bg-slate-900 border-slate-800 text-white placeholder:text-slate-700' : ''}`} 
+              className="input-field pl-14" 
               placeholder={role === 'doctor' ? "Dr. John Doe" : "John Doe"}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -141,13 +142,13 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <label className={`text-xs font-black uppercase tracking-widest ml-1 ${role === 'doctor' ? 'text-slate-500' : 'text-slate-400'}`}>Email Address</label>
+          <label className="text-xs font-black uppercase tracking-widest ml-1 text-slate-400">Email Address</label>
           <div className="relative group">
-            <Mail className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${role === 'doctor' ? 'text-slate-600 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-600'}`} />
+            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors text-slate-400 group-focus-within:text-blue-600" />
             <input 
               type="email" 
               required
-              className={`input-field pl-14 ${role === 'doctor' ? 'bg-slate-900 border-slate-800 text-white placeholder:text-slate-700' : ''}`} 
+              className="input-field pl-14" 
               placeholder={role === 'doctor' ? "doctor@mediflow.com" : "patient@mediflow.com"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -156,26 +157,31 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <label className={`text-xs font-black uppercase tracking-widest ml-1 ${role === 'doctor' ? 'text-slate-500' : 'text-slate-400'}`}>Password</label>
+          <label className="text-xs font-black uppercase tracking-widest ml-1 text-slate-400">Password</label>
           <div className="relative group">
-            <Lock className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${role === 'doctor' ? 'text-slate-600 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-600'}`} />
+            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors text-slate-400 group-focus-within:text-blue-600" />
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               required
-              className={`input-field pl-14 ${role === 'doctor' ? 'bg-slate-900 border-slate-800 text-white placeholder:text-slate-700' : ''}`} 
+              className="input-field pl-14 pr-12" 
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
         <button 
           type="submit" 
           disabled={loading}
-          className={`btn-primary w-full flex items-center justify-center gap-3 py-5 text-lg group mt-4 ${
-            role === 'doctor' ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20' : ''
-          }`}
+          className="btn-primary w-full flex items-center justify-center gap-3 py-5 text-lg group mt-4"
         >
           {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
             <>
