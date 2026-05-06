@@ -97,7 +97,7 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setRole('patient')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            role === 'patient' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-400'
+            role === 'patient' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           <User className="w-4 h-4" />
@@ -107,7 +107,7 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setRole('doctor')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            role === 'doctor' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-400'
+            role === 'doctor' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           <Stethoscope className="w-4 h-4" />

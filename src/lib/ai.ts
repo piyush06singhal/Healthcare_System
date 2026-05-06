@@ -8,7 +8,11 @@ let aiInstance: GoogleGenAI | null = null;
 
 const getAI = () => {
   if (!aiInstance) {
-    const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+    // On static hosts like Vercel, we must use VITE_ prefixed variables for the frontend
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
+    if (!apiKey) {
+      console.warn("MediFlow AI Error: GEMINI_API_KEY not found in environment. AI features will be restricted.");
+    }
     aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
   }
   return aiInstance;
