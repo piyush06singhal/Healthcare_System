@@ -1,12 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Shield, Camera, Save, Loader2, ChevronRight, Globe, Lock, Star, Activity, CreditCard, Bell, Settings, Clock } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { motion, useScroll, useSpring, useTransform } from 'motion/react';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
+import { setUser } from '../store/authSlice';
 
 export default function Profile() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const containerRef = useRef(null);
@@ -25,26 +28,87 @@ export default function Profile() {
   const y1 = useTransform(scrollYProgress, [0, 1], [0, -100]);
   const y2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
   const rotate = useTransform(scrollYProgress, [0, 1], [0, 45]);
+  
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '+1 (555) 000-0000',
-    address: 'San Francisco, CA',
-    bio: 'Dedicated healthcare professional focused on patient-centric care and digital health innovation.',
-    specialty: 'Cardiology',
-    education: 'Harvard Medical School',
-    experience: '12 Years',
-    certifications: 'Board Certified in Cardiovascular Disease',
+    phone: '',
+    address: '',
+    bio: '',
+    specialty: '',
+    education: '',
+    experience: '',
+    certifications: '',
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        bio: user.bio || '',
+        specialty: user.specialty || '',
+        education: user.education || '',
+        experience: user.experience || '',
+        certifications: user.certifications || '',
+      });
+    }
+  }, [user]);
+
+  // Real-time listener for current user profile
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-${user.id}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'users',
+        filter: `id=eq.${user.id}`
+      }, (payload) => {
+        console.log('Real-time profile update:', payload.new);
+        dispatch(setUser(payload.new as any));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, dispatch]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) return;
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          bio: formData.bio,
+          specialty: formData.specialty,
+          education: formData.education,
+          experience: formData.experience,
+          certifications: formData.certifications,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      toast.success('Clinical profile persistent across MediFlow network');
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast.error('Failed to update profile: ' + error.message);
+    } finally {
       setLoading(false);
-      toast.success('Profile updated successfully');
-    }, 1000);
+    }
   };
 
   return (

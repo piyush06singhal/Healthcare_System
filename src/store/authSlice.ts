@@ -14,6 +14,13 @@ interface User {
   email: string;
   role: 'patient' | 'doctor' | 'admin';
   profiles?: UserProfile[];
+  phone?: string;
+  address?: string;
+  bio?: string;
+  specialty?: string;
+  education?: string;
+  experience?: string;
+  certifications?: string;
 }
 
 interface AuthState {
@@ -25,7 +32,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: null,
+  user: JSON.parse(localStorage.getItem('user') || 'null'),
   activeProfile: null,
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
@@ -49,6 +56,11 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.isAuthenticated = true;
       localStorage.setItem('token', action.payload.token);
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = { ...state.user, ...action.payload };
+      localStorage.setItem('user', JSON.stringify(state.user));
     },
     switchProfile: (state, action: PayloadAction<UserProfile>) => {
       state.activeProfile = action.payload;
@@ -59,6 +71,7 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -66,5 +79,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, setLoading, switchProfile } = authSlice.actions;
+export const { setCredentials, logout, setLoading, switchProfile, setUser } = authSlice.actions;
 export default authSlice.reducer;

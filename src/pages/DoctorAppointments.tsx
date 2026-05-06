@@ -14,7 +14,8 @@ import {
   Brain,
   ChevronRight,
   Sparkles,
-  Activity
+  Activity,
+  Video
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState, useMemo, useEffect } from 'react';
@@ -26,54 +27,95 @@ import { RootState } from '../store';
 import { useNotifications } from '../contexts/NotificationContext';
 
 export default function DoctorAppointments() {
+  const navigate = useNavigate();
   const [queueSearch, setQueueSearch] = useState('');
   const [queueFilter, setQueueFilter] = useState('all');
   const [sortBy, setSortBy] = useState('time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const { appointments: reduxAppointments } = useSelector((state: RootState) => state.health);
   const { user } = useSelector((state: RootState) => state.auth);
-  const [loading, setLoading] = useState(false);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const appointments = reduxAppointments;
+  const fetchAppointments = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('doctor_id', user.id);
+      
+      if (error) {
+        console.error('Supabase Appointment Fetch Error:', error);
+        if (error.message.includes('column "date" does not exist')) {
+            toast.error('SQL Migration Required: Please run the updated appointments schema.');
+        }
+        throw error;
+      }
+
+      // Manual sorting if the column doesn't exist yet but the query succeeded (unexpectedly)
+      const sortedData = (data || []).sort((a, b) => {
+        const timeA = new Date(`${a.date || a.appointment_date} ${a.time || '00:00'}`).getTime();
+        const timeB = new Date(`${b.date || b.appointment_date} ${b.time || '00:00'}`).getTime();
+        return timeA - timeB;
+      });
+
+      setAppointments(sortedData);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast.error('Failed to sync clinical queue - check console for schema sync status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+
+    if (user?.id) {
+      const channel = supabase
+        .channel(`doctor-appointments-${user.id}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'appointments',
+          filter: `doctor_id=eq.${user.id}`
+        }, () => {
+          fetchAppointments();
+        })
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user?.id]);
 
   const updateAppointmentStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
         .from('appointments')
-        .update({ status })
+        .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
       
       if (error) throw error;
       
       const statusMessages: Record<string, string> = {
         accepted: 'Appointment accepted. Patient has been notified.',
-        rejected: 'Appointment rejected. Patient will be informed.',
+        declined: 'Appointment declined. Patient will be informed.',
         completed: 'Consultation marked as completed.'
       };
 
       toast.success(statusMessages[status] || `Status updated to ${status}`);
-      fetchAppointments();
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
     }
   };
 
-  const navigate = useNavigate();
-
-  const fetchAppointments = async () => {
-    // In a real app, this would refresh the data from the server
-    // For now, it represents the trigger for a data sync
-    console.log('Refreshing appointments queue...');
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
-
   const filteredQueue = useMemo(() => {
     let result = appointments.filter(apt => {
-      const name = apt.patient?.name || '';
+      const name = apt.patient_name || '';
       const matchesSearch = name.toLowerCase().includes(queueSearch.toLowerCase()) || apt.id.toLowerCase().includes(queueSearch.toLowerCase());
       const matchesFilter = queueFilter === 'all' || apt.status.toLowerCase() === queueFilter.toLowerCase();
       return matchesSearch && matchesFilter;
@@ -81,13 +123,15 @@ export default function DoctorAppointments() {
 
     result.sort((a, b) => {
       if (sortBy === 'time') {
-        const dateA = new Date(a.appointment_date).getTime();
-        const dateB = new Date(b.appointment_date).getTime();
+        const dateAStr = a.appointment_date || `${a.date} ${a.time}`;
+        const dateBStr = b.appointment_date || `${b.date} ${b.time}`;
+        const dateA = new Date(dateAStr).getTime();
+        const dateB = new Date(dateBStr).getTime();
         return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
       }
       if (sortBy === 'name') {
-        const nameA = a.patient?.name || '';
-        const nameB = b.patient?.name || '';
+        const nameA = a.patient_name || 'Unknown Patient';
+        const nameB = b.patient_name || 'Unknown Patient';
         return sortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       }
       return 0;
@@ -185,7 +229,7 @@ export default function DoctorAppointments() {
                 <div className="flex items-center gap-10 relative z-10">
                   <div className="relative shrink-0">
                     <img 
-                      src={`https://picsum.photos/seed/${apt.patient?.id}/300/300`} 
+                      src={`https://i.pravatar.cc/400?u=${apt.patient_id}`} 
                       className="w-24 h-24 lg:w-28 lg:h-28 rounded-[2.25rem] object-cover border-4 border-white shadow-2xl group-hover:scale-110 transition-transform duration-700 ring-1 ring-slate-100" 
                       alt="Patient" 
                       referrerPolicy="no-referrer" 
@@ -193,15 +237,17 @@ export default function DoctorAppointments() {
                     <div className={`absolute -bottom-2 -right-2 w-9 h-9 border-4 border-white rounded-full shadow-xl ${
                       apt.status === 'accepted' ? 'bg-emerald-500 shadow-emerald-500/20' : 
                       apt.status === 'completed' ? 'bg-blue-500 shadow-blue-500/20' :
+                      apt.status === 'declined' ? 'bg-rose-500 shadow-rose-500/20' :
                       'bg-amber-500 animate-pulse shadow-amber-500/20'
                     }`} />
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-4 flex-wrap">
-                      <h3 className="text-3xl font-display font-black text-slate-950 tracking-tight">{apt.patient?.name}</h3>
+                      <h3 className="text-3xl font-display font-black text-slate-950 tracking-tight">{apt.patient_name}</h3>
                       <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                         apt.status === 'accepted' ? 'bg-emerald-50 text-emerald-600 border-emerald-500/20' : 
                         apt.status === 'completed' ? 'bg-blue-50 text-blue-600 border-blue-500/20' :
+                        apt.status === 'declined' ? 'bg-rose-50 text-rose-600 border-rose-500/20' :
                         'bg-amber-50 text-amber-600 border-amber-500/20'
                       }`}>
                         {apt.status}
@@ -210,11 +256,11 @@ export default function DoctorAppointments() {
                     <div className="flex items-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                       <span className="flex items-center gap-2.5">
                         <Clock className="w-4 h-4 text-blue-600" />
-                        {format(new Date(apt.appointment_date), 'h:mm a')}
+                        {apt.time}
                       </span>
                       <span className="flex items-center gap-2.5">
                         <Calendar className="w-4 h-4 text-indigo-600" />
-                        {format(new Date(apt.appointment_date), 'MMM d')}
+                        {format(new Date(apt.date), 'MMM d, yyyy')}
                       </span>
                     </div>
                   </div>
@@ -245,6 +291,15 @@ export default function DoctorAppointments() {
                     <Stethoscope className="w-5 h-5 text-blue-400" />
                     Clinical View
                   </button>
+
+                  {apt.status === 'accepted' && (
+                    <button 
+                      onClick={() => navigate(`/dashboard/video-consultation/${apt.id}`)}
+                      className="w-16 h-16 bg-blue-600/10 text-blue-600 border border-blue-600/20 rounded-[1.5rem] flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-lg group"
+                    >
+                      <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    </button>
+                  )}
                 </div>
               </div>
 

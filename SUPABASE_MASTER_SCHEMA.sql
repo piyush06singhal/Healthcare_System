@@ -31,7 +31,12 @@ CREATE TABLE IF NOT EXISTS public.appointments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     patient_id UUID REFERENCES public.users(id) NOT NULL,
     doctor_id UUID REFERENCES auth.users(id), -- Specific staff user
-    appointment_date TIMESTAMPTZ NOT NULL,
+    patient_name TEXT,
+    doctor_name TEXT,
+    appointment_date TIMESTAMPTZ DEFAULT NOW(),
+    date TEXT, -- Simplified tracking for UI
+    time TEXT, -- Simplified tracking for UI
+    type TEXT DEFAULT 'Video',
     status TEXT CHECK (status IN ('pending', 'accepted', 'cancelled', 'completed')) DEFAULT 'pending',
     reason TEXT,
     priority TEXT CHECK (priority IN ('normal', 'urgent', 'critical')) DEFAULT 'normal',
@@ -63,11 +68,11 @@ CREATE TABLE IF NOT EXISTS public.user_biometrics (
 CREATE TABLE IF NOT EXISTS public.prescriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     patient_id UUID REFERENCES public.users(id) NOT NULL,
-    doctor_id UUID REFERENCES auth.users(id) NOT NULL,
+    doctor_id UUID REFERENCES public.users(id) NOT NULL,
     medication TEXT NOT NULL,
     dosage TEXT NOT NULL,
     frequency TEXT NOT NULL,
-    status TEXT DEFAULT 'active',
+    status TEXT DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -82,7 +87,20 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. SECURITY (RLS)
+-- 9. DIAGNOSTICS (AI ANALYSIS)
+CREATE TABLE IF NOT EXISTS public.diagnostics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES public.users(id),
+    doctor_id UUID REFERENCES public.users(id),
+    type TEXT NOT NULL,
+    findings JSONB,
+    severity TEXT,
+    confidence NUMERIC,
+    image_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. SECURITY (RLS)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.practitioners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
@@ -90,6 +108,7 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_biometrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.diagnostics ENABLE ROW LEVEL SECURITY;
 
 -- Policies (Defensive: Drop then Create)
 DROP POLICY IF EXISTS "Users view own profile" ON public.users;
@@ -111,18 +130,30 @@ DROP POLICY IF EXISTS "Biometric access" ON public.user_biometrics;
 CREATE POLICY "Biometric access" ON public.user_biometrics FOR ALL USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "Prescription access" ON public.prescriptions;
-CREATE POLICY "Prescription access" ON public.prescriptions FOR SELECT USING (auth.uid() = patient_id OR auth.uid() = doctor_id);
+CREATE POLICY "Prescription access" ON public.prescriptions FOR ALL USING (
+    auth.uid() = patient_id OR 
+    auth.uid() = doctor_id OR 
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('doctor', 'admin'))
+);
 
 DROP POLICY IF EXISTS "Notification access" ON public.notifications;
 CREATE POLICY "Notification access" ON public.notifications FOR ALL USING (auth.uid() = user_id);
 
--- 10. REAL-TIME REPLICATION
+DROP POLICY IF EXISTS "Diagnostic access" ON public.diagnostics;
+CREATE POLICY "Diagnostic access" ON public.diagnostics FOR ALL USING (
+    auth.uid() = patient_id OR 
+    auth.uid() = doctor_id OR 
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('doctor', 'admin'))
+);
+
+-- 11. REAL-TIME REPLICATION
 -- NOTE: If these error because the table is already a member, run them individually
 -- ALTER PUBLICATION supabase_realtime ADD TABLE public.appointments;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE public.user_biometrics;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE public.prescriptions;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.diagnostics;
 
 -- 11. AUTH SYNC TRIGGER
 CREATE OR REPLACE FUNCTION public.handle_new_user()

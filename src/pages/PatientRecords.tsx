@@ -14,33 +14,70 @@ import {
   Sparkles,
   Share2,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
-
-const medicalRecords = [
-  { id: 'REC-001', name: 'Annual Physical Report', date: 'Oct 12, 2026', type: 'Report', doctor: 'Dr. Sarah Mitchell', size: '2.4 MB', icon: <FileText className="w-6 h-6" />, color: 'blue', insight: 'All markers within optimal range. Slight increase in vitamin D recommended.' },
-  { id: 'REC-002', name: 'Blood Chemistry Panel', date: 'Sep 28, 2026', type: 'Lab', doctor: 'Dr. James Wilson', size: '1.8 MB', icon: <FlaskConical className="w-6 h-6" />, color: 'emerald', insight: 'Glucose levels stabilized at 98mg/dL. High metabolic efficiency detected.' },
-  { id: 'REC-003', name: 'Chest X-Ray Analysis', date: 'Aug 15, 2026', type: 'Imaging', doctor: 'Dr. Elena Rodriguez', size: '15.2 MB', icon: <Activity className="w-6 h-6" />, color: 'indigo', insight: 'Secondary analysis confirms no pulmonary anomalies. Structural cardiac volume is nominal.' },
-  { id: 'REC-004', name: 'Cardiology Consultation', date: 'Jul 22, 2026', type: 'Consultation', doctor: 'Dr. Sarah Mitchell', size: '0.8 MB', icon: <Stethoscope className="w-6 h-6" />, color: 'rose', insight: 'Heart rate variability shows positive trend. Continue current aerobic protocol.' },
-];
-
-const categories = ['All', 'Report', 'Lab', 'Imaging', 'Consultation'];
+import { supabase } from '../lib/supabase';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 export default function PatientRecords() {
+  const { user } = useSelector((state: RootState) => state.auth);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) fetchRecords();
+  }, [user?.id]);
+
+  const fetchRecords = async () => {
+    if (!user?.id) return;
+    try {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('diagnostics')
+            .select('*')
+            .eq('patient_id', user.id)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const mapped = (data || []).map(d => ({
+            id: `REC-${d.id.slice(0, 3)}`,
+            name: d.type,
+            date: new Date(d.created_at).toLocaleDateString(),
+            type: 'Imaging',
+            doctor: 'AI Specialist',
+            size: 'AI Generated',
+            icon: <Activity className="w-6 h-6" />,
+            color: 'blue',
+            insight: d.findings?.findings?.[0] || 'Clinical analysis pending.'
+        }));
+
+        setRecords(mapped);
+    } catch (error) {
+        console.error('Error fetching records:', error);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const categories = ['All', 'Report', 'Lab', 'Imaging', 'Consultation'];
 
   const filteredRecords = useMemo(() => {
-    return medicalRecords.filter(rec => {
+    const baseRecords = records.length > 0 ? records : [];
+    return baseRecords.filter(rec => {
       const matchesSearch = rec.name.toLowerCase().includes(search.toLowerCase()) || 
                            rec.doctor.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = activeCategory === 'All' || rec.type === activeCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [search, activeCategory]);
+  }, [search, activeCategory, records]);
 
   const containerVariants = {
     hidden: { opacity: 0 },

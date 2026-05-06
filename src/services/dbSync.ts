@@ -2,8 +2,16 @@ import { supabase, subscribeToChannel } from '../lib/supabase';
 import { 
   setPractitioners, 
   setAppointments, 
+  setMessages,
   addMessage,
-  addNotification 
+  setNotifications,
+  addNotification,
+  setPrescriptions,
+  updateBiometrics,
+  setTasks,
+  addTask,
+  updateTask,
+  deleteTask
 } from '../store/healthSlice';
 import { AppDispatch } from '../store';
 import { toast } from 'sonner';
@@ -55,12 +63,79 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
       .order('timestamp', { ascending: false });
     
     if (!error && data) {
-      // Assuming you have a setNotifications action, if not we'll use addNotification logic
-      data.forEach(n => dispatch(addNotification(n)));
+      dispatch(setNotifications(data.map(n => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: n.type as any,
+        timestamp: n.timestamp,
+        read: n.read
+      }))));
     }
   };
 
-  // 4. Set up Real-time Listeners
+  // 4. Fetch & Sync Prescriptions
+  const syncPrescriptions = async () => {
+    const { data, error } = await supabase
+      .from('prescriptions')
+      .select('*')
+      .eq(isDoctor ? 'doctor_id' : 'patient_id', userId);
+    
+    if (!error && data) {
+      dispatch(setPrescriptions(data.map(p => ({
+        id: p.id,
+        name: p.medication,
+        dosage: p.dosage,
+        frequency: p.frequency,
+        remaining: 10, // Mocking these for now but they should be in DB
+        total: 10,
+        doctor: p.doctor_id,
+        status: (p.status || 'Active') as any,
+        category: 'Medication'
+      }))));
+    }
+  };
+
+  // 5. Fetch & Sync Biometrics
+  const syncBiometrics = async () => {
+    const { data, error } = await supabase
+      .from('user_biometrics')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (!error && data) {
+      dispatch(updateBiometrics({
+        heartRate: [], // We'd need a separate history table for the chart
+        bloodPressure: data.blood_pressure,
+        bloodSugar: data.glucose,
+        oxygen: data.oxygen,
+        lastUpdated: data.last_updated
+      }));
+    }
+  };
+
+  // 6. Fetch & Sync Tasks
+  const syncTasks = async () => {
+    const { data, error } = await supabase
+      .from('clinical_tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      dispatch(setTasks(data.map(t => ({
+        id: t.id,
+        text: t.text,
+        completed: t.completed,
+        priority: t.priority as any,
+        category: t.category,
+        dueDate: t.due_date
+      }))));
+    }
+  };
+
+  // 7. Set up Real-time Listeners
   const msgChannel = subscribeToChannel('messages-channel', 'messages', (payload) => {
     if (payload.new && payload.new.receiver_id === userId) {
       dispatch(addMessage({
@@ -103,15 +178,45 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
     }
   });
 
+  const taskChannel = subscribeToChannel('tasks-channel', 'clinical_tasks', (payload) => {
+    if (payload.new && payload.new.user_id === userId) {
+      if (payload.eventType === 'INSERT') {
+        dispatch(addTask({
+          id: payload.new.id,
+          text: payload.new.text,
+          completed: payload.new.completed,
+          priority: payload.new.priority,
+          category: payload.new.category,
+          dueDate: payload.new.due_date
+        }));
+      } else if (payload.eventType === 'UPDATE') {
+        dispatch(updateTask({
+          id: payload.new.id,
+          text: payload.new.text,
+          completed: payload.new.completed,
+          priority: payload.new.priority,
+          category: payload.new.category,
+          dueDate: payload.new.due_date
+        }));
+      } else if (payload.eventType === 'DELETE') {
+        dispatch(deleteTask(payload.old.id));
+      }
+    }
+  });
+
   // Initial fetch
   syncPractitioners();
   syncAppointments();
   syncNotifications();
+  syncPrescriptions();
+  syncBiometrics();
+  syncTasks();
 
   return () => {
     supabase.removeChannel(msgChannel);
     supabase.removeChannel(aptChannel);
     supabase.removeChannel(notifChannel);
+    supabase.removeChannel(taskChannel);
   };
 };
 

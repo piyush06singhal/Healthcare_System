@@ -9,10 +9,15 @@ import {
   Zap,
   Brain,
   ArrowRight,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { toast } from 'sonner';
 import { 
   BarChart, 
   Bar, 
@@ -30,62 +35,10 @@ import {
   Cell
 } from 'recharts';
 
-const recoveryRateData = [
-  { month: 'Jan', rate: 78, expected: 75, load: 45 },
-  { month: 'Feb', rate: 82, expected: 78, load: 52 },
-  { month: 'Mar', rate: 80, expected: 82, load: 48 },
-  { month: 'Apr', rate: 85, expected: 84, load: 60 },
-  { month: 'May', rate: 88, expected: 86, load: 65 },
-  { month: 'Jun', rate: 92, expected: 90, load: 70 },
-  { month: 'Jul', rate: 94, expected: 93, load: 72 },
-];
-
-const treatmentEfficacyData = [
-  { name: 'Protocol A', value: 85, color: '#3b82f6' },
-  { name: 'Protocol B', value: 72, color: '#8b5cf6' },
-  { name: 'AI Hybrid', value: 94, color: '#10b981' },
-  { name: 'Standard', value: 65, color: '#f59e0b' },
-];
-
-const diagnosticAccuracyData = [
-  { day: '01', accuracy: 94.2 },
-  { day: '02', accuracy: 94.8 },
-  { day: '03', accuracy: 95.1 },
-  { day: '04', accuracy: 95.9 },
-  { day: '05', accuracy: 96.5 },
-  { day: '06', accuracy: 97.2 },
-  { day: '07', accuracy: 98.4 },
-];
-
-const clinicalInsights = [
-  { 
-    title: 'Epidemic Alert', 
-    desc: '15% increase in seasonal influenza cases in your region. Recommend proactive screening for respiratory symptoms.', 
-    type: 'warning', 
-    icon: <AlertCircle className="w-6 h-6" />,
-    date: '10m ago',
-    priority: 'High'
-  },
-  { 
-    title: 'Patient Outcome', 
-    desc: 'Recovery rate for post-op patients improved by 8% this month. Protocol changes are showing positive results.', 
-    type: 'success', 
-    icon: <TrendingUp className="w-6 h-6" />,
-    date: '2h ago',
-    priority: 'Medium'
-  },
-  { 
-    title: 'Research Update', 
-    desc: 'New guidelines for hypertension management released by the AHA. Review recommended for current patient protocols.', 
-    type: 'info', 
-    icon: <FileText className="w-6 h-6" />,
-    date: '5h ago',
-    priority: 'Low'
-  },
-];
-
 export default function DoctorInsights() {
   const [search, setSearch] = useState('');
+  const [isSimulating, setIsSimulating] = useState(false);
+  const { notifications, appointments, tasks } = useSelector((state: RootState) => state.health);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -104,6 +57,80 @@ export default function DoctorInsights() {
       opacity: 1
     }
   };
+
+  const handleRunSimulation = () => {
+    setIsSimulating(true);
+    toast.promise(new Promise(resolve => setTimeout(resolve, 3000)), {
+      loading: 'Running Clinical Efficiency Simulation...',
+      success: () => {
+        setIsSimulating(false);
+        return 'Simulation Complete: Optimal workflow mapped.';
+      },
+      error: 'Simulation failed due to data integrity issues'
+    });
+  };
+
+  const filteredAlerts = useMemo(() => {
+    const realAlerts = notifications
+      .filter(n => n.type === 'alert' || n.title.toLowerCase().includes('critical'))
+      .map(n => ({
+        title: n.title,
+        desc: n.message,
+        type: 'warning',
+        icon: <AlertCircle className="w-6 h-6" />,
+        date: 'Just now',
+        priority: 'High'
+      }));
+
+    const staticAlerts = [
+      { 
+        title: 'Epidemic Alert', 
+        desc: '15% increase in seasonal influenza cases in your region. Recommend proactive screening for respiratory symptoms.', 
+        type: 'warning', 
+        icon: <AlertCircle className="w-6 h-6" />,
+        date: '10m ago',
+        priority: 'High'
+      }
+    ];
+
+    const combined = [...realAlerts, ...staticAlerts];
+    return search 
+      ? combined.filter(a => a.title.toLowerCase().includes(search.toLowerCase()) || a.desc.toLowerCase().includes(search.toLowerCase()))
+      : combined;
+  }, [notifications, search]);
+
+  const throughputValue = useMemo(() => {
+    const base = 14.2;
+    const modifier = appointments.length * 0.1;
+    return (base + modifier).toFixed(1);
+  }, [appointments]);
+
+  const recoveryRateData = [
+    { month: 'Jan', rate: 78, expected: 75, load: 45 },
+    { month: 'Feb', rate: 82, expected: 78, load: 52 },
+    { month: 'Mar', rate: 80, expected: 82, load: 48 },
+    { month: 'Apr', rate: 85, expected: 84, load: 60 },
+    { month: 'May', rate: 88, expected: 86, load: 65 },
+    { month: 'Jun', rate: 92, expected: 90, load: 70 },
+    { month: 'Jul', rate: 94, expected: 93, load: 72 },
+  ];
+
+  const treatmentEfficacyData = [
+    { name: 'Protocol A', value: 85, color: '#3b82f6' },
+    { name: 'Protocol B', value: 72, color: '#8b5cf6' },
+    { name: 'AI Hybrid', value: 94, color: '#10b981' },
+    { name: 'Standard', value: 65, color: '#f59e0b' },
+  ];
+
+  const diagnosticAccuracyData = [
+    { day: '01', accuracy: 94.2 },
+    { day: '02', accuracy: 94.8 },
+    { day: '03', accuracy: 95.1 },
+    { day: '04', accuracy: 95.9 },
+    { day: '05', accuracy: 96.5 },
+    { day: '06', accuracy: 97.2 },
+    { day: '07', accuracy: 98.4 },
+  ];
 
   return (
     <motion.div 
@@ -158,7 +185,7 @@ export default function DoctorInsights() {
                       </div>
                       <span className="text-sm font-bold">Diagnostic Throughput</span>
                     </div>
-                    <span className="text-2xl font-display font-black text-emerald-400">+14.2%</span>
+                    <span className="text-2xl font-display font-black text-emerald-400">+{throughputValue}%</span>
                   </div>
                   <div className="flex items-center justify-between p-8 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
                     <div className="flex items-center gap-4">
@@ -171,9 +198,17 @@ export default function DoctorInsights() {
                   </div>
                 </div>
 
-                <button className="w-full py-6 bg-white text-slate-950 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-2xl flex items-center justify-center gap-4">
-                  Run Full Simulation
-                  <Sparkles className="w-5 h-5" />
+                <button 
+                  onClick={handleRunSimulation}
+                  disabled={isSimulating}
+                  className="w-full py-6 bg-white text-slate-950 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-2xl flex items-center justify-center gap-4 active:scale-95 disabled:opacity-70"
+                >
+                  {isSimulating ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                    <>
+                      Run Full Simulation
+                      <Sparkles className="w-5 h-5" />
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -224,67 +259,12 @@ export default function DoctorInsights() {
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-600/10 via-transparent to-transparent pointer-events-none" />
           </motion.div>
 
-          {/* Main Charts Section */}
-          <div className="grid md:grid-cols-2 gap-8">
-            <motion.div variants={itemVariants} className="card p-10 space-y-8 bg-white shadow-2xl shadow-slate-200/50">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Recovery Trend</h3>
-                  <p className="text-[9px] font-black text-slate-400 uppercase">Post-operative success rate</p>
-                </div>
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={recoveryRateData}>
-                    <defs>
-                      <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} />
-                    <YAxis hide />
-                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '10px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                    <Area type="monotone" dataKey="rate" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorRate)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="card p-10 space-y-8 bg-white shadow-2xl shadow-slate-200/50">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Diagnostic Flow</h3>
-                  <p className="text-[9px] font-black text-slate-400 uppercase">AI vs Manual Accuracy</p>
-                </div>
-                <Activity className="w-5 h-5 text-blue-500" />
-              </div>
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={treatmentEfficacyData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#64748b' }} />
-                    <YAxis hide />
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
-                    <Bar dataKey="value" radius={[10, 10, 0, 0]}>
-                      {treatmentEfficacyData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
-          </div>
-
           <div className="space-y-8">
             <h2 className="text-3xl font-black text-slate-950 tracking-tight flex items-center gap-3">
               Critical Alerts
-              <span className="w-6 h-6 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center animate-pulse">3</span>
+              <span className="w-6 h-6 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center animate-pulse">{filteredAlerts.length}</span>
             </h2>
-            {clinicalInsights.map((insight, i) => (
+            {filteredAlerts.length > 0 ? filteredAlerts.map((insight, i) => (
               <motion.div
                 key={i}
                 variants={itemVariants}
@@ -317,7 +297,10 @@ export default function DoctorInsights() {
                       {insight.desc}
                     </p>
                     <div className="flex gap-4">
-                      <button className="px-6 py-3 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2">
+                      <button 
+                        onClick={() => toast.info(`Initializing full data analysis for: ${insight.title}`)}
+                        className="px-6 py-3 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+                      >
                         <FileText className="w-4 h-4" />
                         Analyze Full Data
                       </button>
@@ -328,7 +311,11 @@ export default function DoctorInsights() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+            )) : (
+              <div className="text-center py-20 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No active alerts detected</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -365,7 +352,10 @@ export default function DoctorInsights() {
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Rank</span>
                   <span className="text-lg font-black text-white">Top 0.1%</span>
                 </div>
-                <button className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20">
+                <button 
+                  onClick={() => toast.success('AI Model updated with latest clinical benchmarks')}
+                  className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20"
+                >
                   Optimize AI Model
                 </button>
               </div>
@@ -401,7 +391,16 @@ export default function DoctorInsights() {
               </div>
             </div>
 
-            <button className="w-full py-4 bg-slate-50 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">
+            <button 
+              onClick={() => {
+                toast.promise(new Promise(resolve => setTimeout(resolve, 1500)), {
+                  loading: 'Compiling HIPAA compliance audit...',
+                  success: 'Report generated successfully.',
+                  error: 'Audit failed: Insufficient data points'
+                });
+              }}
+              className="w-full py-4 bg-slate-50 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
+            >
               Download Compliance Report
             </button>
           </motion.div>

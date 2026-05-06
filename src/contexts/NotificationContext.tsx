@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'sonner';
+import { markNotificationRead, setNotifications as setReduxNotifications } from '../store/healthSlice';
 
 interface Notification {
   id: string;
@@ -26,9 +27,19 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
   const { user } = useSelector((state: RootState) => state.auth);
+  const reduxNotifications = useSelector((state: RootState) => state.health.notifications);
+  const dispatch = useDispatch();
+
+  const formattedNotifications: Notification[] = reduxNotifications.map(n => ({
+    id: n.id,
+    title: n.title,
+    message: n.message,
+    type: n.type === 'alert' ? 'urgent' : n.type as any || 'info',
+    time: new Date(n.timestamp).toLocaleTimeString(),
+    isRead: n.read
+  }));
 
   useEffect(() => {
     const newSocket = io(window.location.origin);
@@ -43,39 +54,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (socket && user?.id) {
       socket.emit('join-room', user.id);
 
-      socket.on('new-notification', (notification: Notification) => {
-        const fullNotification = {
-          ...notification,
-          id: Math.random().toString(36).substr(2, 9),
-          time: 'Just now',
-          isRead: false,
-        };
-        setNotifications((prev) => [fullNotification, ...prev]);
-        
-        // Show toast for urgent notifications
-        if (notification.type === 'urgent') {
-          toast.error(notification.title, {
-            description: notification.message,
-          });
-        } else {
-          toast.info(notification.title, {
-            description: notification.message,
-          });
-        }
+      socket.on('new-notification', (notification: any) => {
+        // Handle legacy socket notifications if any
+        toast.info(notification.title, {
+          description: notification.message,
+        });
       });
 
       socket.on('appointment-created', (appointment: any) => {
-        const newNotification: Notification = {
-          id: Math.random().toString(36).substr(2, 9),
-          type: 'info',
-          title: 'New Appointment Request',
-          message: `New consultation request from ${appointment.patient?.name || 'a patient'} for ${new Date(appointment.appointment_date).toLocaleDateString()}.`,
-          time: 'Just now',
-          isRead: false,
-        };
-        setNotifications((prev) => [newNotification, ...prev]);
-        toast.success(newNotification.title, {
-          description: newNotification.message,
+        toast.success('New Appointment Request', {
+          description: `New consultation request from ${appointment.patient?.name || 'a patient'}.`,
           action: {
             label: 'View Queue',
             onClick: () => window.location.href = '/dashboard/appointments'
@@ -93,17 +81,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [socket, user?.id]);
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+    dispatch(markNotificationRead(id));
   };
 
   const deleteNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    // Optionally implement delete in DB if needed, for now just filter in store if possible
+    // But store doesn't have deleteNotification action yet, I'll stick to read for now
   };
 
   const clearAll = () => {
-    setNotifications([]);
+    dispatch(setReduxNotifications([]));
   };
 
   const sendNotification = (userId: string, notification: Omit<Notification, 'id' | 'time' | 'isRead'>) => {
@@ -112,12 +99,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = reduxNotifications.filter((n) => !n.read).length;
 
   return (
     <NotificationContext.Provider
       value={{
-        notifications,
+        notifications: formattedNotifications,
         unreadCount,
         markAsRead,
         deleteNotification,

@@ -81,9 +81,10 @@ const containerVariants = {
 
 export default function DoctorOverview() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { biometrics, appointments: reduxAppointments, practitioners } = useSelector((state: RootState) => state.health);
+  const { biometrics, appointments: reduxAppointments, practitioners, tasks } = useSelector((state: RootState) => state.health);
   const { notifications } = useNotifications();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [networkPatientCount, setNetworkPatientCount] = useState<string>('...');
   const [practitionerData, setPractitionerData] = useState<any>(null);
 
@@ -131,24 +132,27 @@ export default function DoctorOverview() {
     { type: 'success', title: 'Profile Updated', desc: 'Your medical credentials have been successfully updated in the directory.', meta: '1h ago' }
   ];
 
-  const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  const [taskSort, setTaskSort] = useState<'priority' | 'newest'>('priority');
-  const [tasks, setTasks] = useState([
-    { id: 1, text: 'Review Sarah Jenkins lab results', completed: false, priority: 'urgent', category: 'Diagnostics', dueDate: 'Today' },
-    { id: 2, text: 'Finalize discharge for Unit 04', completed: true, priority: 'medium', category: 'Operations', dueDate: 'Completed' },
-    { id: 3, text: 'Sign medical certificate for Patient #102', completed: false, priority: 'low', category: 'Admin', dueDate: 'Tomorrow' },
-    { id: 4, text: 'Update clinical protocols V4.0', completed: false, priority: 'critical', category: 'Strategy', dueDate: 'Next Week' },
-  ]);
+  const toggleTask = async (id: string, completed: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('clinical_tasks')
+        .update({ completed: !completed })
+        .eq('id', id);
+      
+      if (error) throw error;
 
-  const toggleTask = (id: number) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-    const task = tasks.find(t => t.id === id);
-    if (task && !task.completed) {
-      toast.success('Task synchronized to clinical history', {
-        icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-      });
+      if (!completed) {
+        toast.success('Task synchronized to clinical history', {
+          icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+        });
+      }
+    } catch (err: any) {
+      toast.error('Failed to update task');
     }
   };
+
+  const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [taskSort, setTaskSort] = useState<'priority' | 'newest'>('priority');
 
   const filteredTasks = tasks
     .filter(t => {
@@ -159,9 +163,9 @@ export default function DoctorOverview() {
     .sort((a, b) => {
       if (taskSort === 'priority') {
         const order: Record<string, number> = { critical: 0, urgent: 1, medium: 2, low: 3 };
-        return order[a.priority] - order[b.priority];
+        return (order[a.priority as string] ?? 2) - (order[b.priority as string] ?? 2);
       }
-      return b.id - a.id;
+      return b.id.localeCompare(a.id);
     });
 
   const pendingAppointments = reduxAppointments.filter(a => a.status === 'pending');
@@ -334,7 +338,7 @@ export default function DoctorOverview() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    onClick={() => toggleTask(task.id)}
+                    onClick={() => toggleTask(task.id, task.completed)}
                     className={`group p-6 rounded-[2.5rem] border transition-all cursor-pointer flex items-center justify-between gap-6 ${
                       task.completed 
                         ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60' 

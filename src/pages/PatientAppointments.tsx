@@ -20,8 +20,10 @@ import { RootState } from '../store';
 import { toast } from 'sonner';
 import GenericModal from '../components/GenericModal';
 import { addAppointment } from '../store/healthSlice';
+import { useNavigate } from 'react-router-dom';
 
 export default function PatientAppointments() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
   const [bookingData, setBookingData] = useState({ doctorId: 'd1', reason: '', date: '' });
@@ -40,35 +42,59 @@ export default function PatientAppointments() {
   }, [user?.id]);
 
   const fetchAppointments = async () => {
+    if (!user?.id) return;
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('appointments')
-        .select(`
-          *,
-          doctor:users!doctor_id(id, name, email)
-        `)
-        .eq('patient_id', user?.id)
-        .order('appointment_date', { ascending: true });
+        .select('*')
+        .eq('patient_id', user.id);
       
-      if (error) throw error;
-      setDbAppointments(data || []);
+      if (error) {
+        console.error('Patient Supabase Fetch Error:', error);
+        throw error;
+      }
+      
+      const sorted = (data || []).sort((a, b) => {
+        const tA = new Date(`${a.date || a.appointment_date} ${a.time || '00:00'}`).getTime();
+        const tB = new Date(`${b.date || b.appointment_date} ${b.time || '00:00'}`).getTime();
+        return tA - tB;
+      });
+
+      setDbAppointments(sorted);
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      toast.error('Failed to sync patient schedule');
     } finally {
       setLoading(false);
     }
   };
 
-  const allAppointments = useMemo(() => {
-    // Combine DB appointments and Redux (local/newly booked) appointments
-    // Prioritize local UI state for immediate feedback
-    return [...reduxAppointments, ...dbAppointments];
-  }, [dbAppointments, reduxAppointments]);
+  useEffect(() => {
+    if (user?.id) {
+        fetchAppointments();
+        const channel = supabase
+            .channel(`patient-appointments-${user.id}`)
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'appointments',
+                filter: `patient_id=eq.${user.id}`
+            }, () => {
+                fetchAppointments();
+            })
+            .subscribe();
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+  }, [user?.id]);
+
+  const allAppointments = dbAppointments;
 
   const filteredAppointments = useMemo(() => {
     return allAppointments.filter(apt => 
-      apt.doctor?.name?.toLowerCase().includes(search.toLowerCase()) || 
+      apt.doctor_name?.toLowerCase().includes(search.toLowerCase()) || 
       apt.reason?.toLowerCase().includes(search.toLowerCase())
     );
   }, [allAppointments, search]);
@@ -79,39 +105,31 @@ export default function PatientAppointments() {
       return;
     }
 
-    const doctor = practitioners.find(p => p.id === bookingData.doctorId);
+    const doctor = practitioners.find(p => p.id === bookingData.doctorId) || { id: 'staff-01', name: 'Dr. Sarah Mitchell' };
+    const bookingDate = new Date(bookingData.date);
     
-    const newApt = {
-      id: `apt-${Date.now()}`,
-      doctor: doctor ? { id: doctor.id, name: doctor.name, specialty: doctor.specialty } : { id: 'd1', name: 'Dr. Sarah Mitchell', specialty: 'General Physician' },
-      appointment_date: new Date(bookingData.date).toISOString(),
-      status: 'pending' as const,
-      reason: bookingData.reason
-    };
-
     try {
-      // Opt-in real-time: First add to local state for immediate feedback
-      dispatch(addAppointment(newApt));
+      const { error } = await supabase.from('appointments').insert([{
+        patient_id: user?.id,
+        doctor_id: doctor.id,
+        patient_name: user?.name,
+        doctor_name: doctor.name,
+        date: format(bookingDate, 'yyyy-MM-dd'),
+        time: format(bookingDate, 'HH:mm'),
+        type: 'Video',
+        status: 'pending',
+        reason: bookingData.reason
+      }]);
+
+      if (error) throw error;
       
-      // Attempt backend persistence
-      if (user?.id) {
-        await supabase.from('appointments').insert([{
-          patient_id: user.id,
-          doctor_id: doctor?.id || 'staff-01',
-          appointment_date: newApt.appointment_date,
-          status: 'pending',
-          reason: bookingData.reason
-        }]);
-      }
-      
-      toast.success(`Sequential slot reserved with ${doctor?.name}. Clinical confirmation pending.`);
+      toast.success(`Sequential slot reserved with ${doctor.name}. Clinical confirmation pending.`);
+      setIsBookModalOpen(false);
+      setBookingData({ doctorId: 'd1', reason: '', date: '' });
     } catch (error) {
       console.error("Booking error:", error);
-      toast.error("Cloud synchronization failed. Reservation stored locally.");
+      toast.error("Failed to commit reservation to cloud.");
     }
-
-    setIsBookModalOpen(false);
-    setBookingData({ doctorId: 'd1', reason: '', date: '' });
   };
 
   const containerVariants = {
@@ -190,7 +208,7 @@ export default function PatientAppointments() {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <img 
-                      src={`https://i.pravatar.cc/150?u=${apt.doctor?.id}`} 
+                      src={`https://i.pravatar.cc/150?u=${apt.doctor_id}`} 
                       className="w-16 h-16 rounded-2xl object-cover border-4 border-white shadow-xl group-hover:scale-110 transition-transform" 
                       alt="Doctor" 
                       referrerPolicy="no-referrer" 
@@ -198,8 +216,8 @@ export default function PatientAppointments() {
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 border-4 border-white rounded-full"></div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">{apt.doctor?.name}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{apt.doctor?.specialty || 'Physician'}</p>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">{apt.doctor_name}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{apt.type} Session</p>
                   </div>
                 </div>
                 <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
@@ -211,13 +229,13 @@ export default function PatientAppointments() {
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <div className="text-xs font-bold text-slate-600">
-                    {format(new Date(apt.appointment_date), 'EEEE, MMM d, yyyy')}
+                    {format(new Date(apt.date), 'EEEE, MMM d, yyyy')}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <Clock className="w-5 h-5 text-indigo-600" />
                   <div className="text-xs font-bold text-slate-600">
-                    {format(new Date(apt.appointment_date), 'h:mm a')}
+                    {apt.time}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 px-2 py-1">
@@ -240,7 +258,10 @@ export default function PatientAppointments() {
                 </button>
               </div>
 
-              <button className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20">
+              <button 
+                onClick={() => navigate(`/dashboard/video-consultation/${apt.id}`)}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20"
+              >
                 Join {apt.status === 'accepted' ? 'Consultation' : 'Queue'}
               </button>
 

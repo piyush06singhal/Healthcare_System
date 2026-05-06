@@ -78,9 +78,27 @@ export default function DoctorPrescriptions() {
 
   const handleCreatePrescription = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) return;
+
     try {
       setLoading(true);
-      const prescriptionId = `RX-${Math.floor(Math.random() * 900) + 100}`;
+      
+      const { data: insertedData, error: insertError } = await supabase
+        .from('prescriptions')
+        .insert({
+          patient_id: newPrescription.patientId,
+          doctor_id: user.id,
+          medication: newPrescription.medication,
+          dosage: newPrescription.dosage,
+          frequency: newPrescription.frequency,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const prescriptionId = insertedData.id;
       
       const reduxPrescription = {
         id: prescriptionId,
@@ -96,20 +114,19 @@ export default function DoctorPrescriptions() {
 
       dispatch(addPrescription(reduxPrescription));
 
-      const mockNewPrescription = {
+      const newRxEntry = {
         id: prescriptionId,
         date: new Date().toISOString().split('T')[0],
-        notes: `${newPrescription.medication} - ${newPrescription.dosage} (${newPrescription.frequency}) via ${newPrescription.route} for ${newPrescription.duration}. Diagnosis: ${newPrescription.diagnosis}. Refills: ${newPrescription.refills}. ${newPrescription.notes}`,
+        notes: `${newPrescription.medication} - ${newPrescription.dosage} (${newPrescription.frequency}). Notes: ${newPrescription.notes}`,
         patient: {
           name: patients.find(p => p.id === newPrescription.patientId)?.name || 'Unknown Patient'
         },
-        route: newPrescription.route,
-        refills: newPrescription.refills,
-        diagnosis: newPrescription.diagnosis,
-        status: 'active'
+        status: 'active',
+        medication: newPrescription.medication,
+        dosage: newPrescription.dosage
       };
       
-      setPrescriptions(prev => [mockNewPrescription, ...prev]);
+      setPrescriptions(prev => [newRxEntry, ...prev]);
       setIsModalOpen(false);
       setNewPrescription({
         patientId: '',
@@ -123,9 +140,10 @@ export default function DoctorPrescriptions() {
         notes: '',
         pharmacyNotes: ''
       });
-      toast.success('Prescription issued successfully');
-    } catch (error) {
-      toast.error('Failed to issue prescription');
+      toast.success('Prescription issued and synced successfully');
+    } catch (error: any) {
+      console.error('Error issuing prescription:', error);
+      toast.error(error.message || 'Failed to issue prescription');
     } finally {
       setLoading(false);
     }
@@ -135,19 +153,29 @@ export default function DoctorPrescriptions() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('appointments')
+        .from('prescriptions')
         .select(`
           id,
-          date,
-          time,
-          notes,
+          medication,
+          dosage,
+          frequency,
+          status,
+          created_at,
           patient:users!patient_id(id, name)
         `)
         .eq('doctor_id', user?.id)
-        .not('notes', 'is', null);
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setPrescriptions(data || []);
+
+      // Transform for UI consistency if needed
+      const transformed = (data || []).map(p => ({
+        ...p,
+        date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : 'N/A',
+        notes: `${p.medication} (${p.dosage}) - ${p.frequency}`
+      }));
+
+      setPrescriptions(transformed);
     } catch (error) {
       console.error('Error fetching prescriptions:', error);
     } finally {

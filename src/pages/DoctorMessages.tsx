@@ -17,9 +17,17 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { addMessage } from '../store/healthSlice';
 import { toast } from 'sonner';
-import { dbService } from '../services/dbSync';
+import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
+
+interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+}
 
 const mockPatients = [
   { id: 'p1', name: 'Piush Singhal', lastMsg: 'I took the dose 2h ago.', time: 'Just now', unread: 2, avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100", status: 'online' },
@@ -28,43 +36,168 @@ const mockPatients = [
 ];
 
 export default function DoctorMessages() {
-  const { messages } = useSelector((state: RootState) => state.health);
   const { user } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
-  const [selectedPatient, setSelectedPatient] = useState(mockPatients[0]);
+  const navigate = useNavigate();
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isCalling, setIsCalling] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [user?.id]);
+
+  const fetchContacts = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('patient_id, patient_name')
+        .eq('doctor_id', user.id);
+      
+      if (error) throw error;
+      
+      // Unique patients
+      const uniquePatients = Array.from(new Set(data?.map(a => a.patient_id))).map(id => {
+        return data?.find(a => a.patient_id === id);
+      });
+      
+      const patientList = uniquePatients.map(p => ({
+        id: p.patient_id,
+        name: p.patient_name,
+        lastMsg: 'Clinical connection active',
+        time: 'Now',
+        unread: 0,
+        avatar: `https://i.pravatar.cc/150?u=${p.patient_id}`,
+        status: 'online'
+      }));
+
+      setContacts(patientList);
+      if (patientList.length > 0 && !selectedPatient) {
+        setSelectedPatient(patientList[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id && selectedPatient?.id) {
+      fetchMessages();
+      
+      const channel = supabase
+        .channel(`chat-${user.id}-${selectedPatient.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`
+        }, (payload) => {
+          if (payload.new.sender_id === selectedPatient.id) {
+            setMessages(prev => [...prev, payload.new as Message]);
+          }
+        })
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${user.id}`
+        }, (payload) => {
+          if (payload.new.receiver_id === selectedPatient.id) {
+            setMessages(prev => [...prev, payload.new as Message]);
+          }
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user?.id, selectedPatient?.id]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const fetchMessages = async () => {
+    if (!user?.id || !selectedPatient?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedPatient.id}),and(sender_id.eq.${selectedPatient.id},receiver_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !user?.id) return;
+    if (!input.trim() || !user?.id || !selectedPatient?.id) return;
 
-    const newMsg = {
-      id: Date.now().toString(),
-      sender: 'doctor' as const,
-      text: input,
-      timestamp: new Date().toISOString()
-    };
-
-    dispatch(addMessage(newMsg));
     const currentInput = input;
     setInput('');
     
     try {
-      await dbService.sendMessage({
-        sender_id: user.id,
-        receiver_id: selectedPatient.id,
-        content: currentInput
-      });
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: selectedPatient.id,
+          content: currentInput
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (!messages.find(m => m.id === data.id)) {
+        setMessages(prev => [...prev, data as Message]);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Cloud sync failed.');
+      toast.error('Failed to transmit message.');
+      setInput(currentInput); 
     }
   };
+
+  const handleStartConsultation = async () => {
+    if (!selectedPatient) return;
+    
+    // Find most recent appointment to join
+    const { data } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('doctor_id', user?.id)
+        .eq('patient_id', selectedPatient.id)
+        .order('date', { ascending: false })
+        .limit(1)
+        .single();
+
+    if (data) {
+        navigate(`/dashboard/video-consultation/${data.id}`);
+    } else {
+        // Fast track room if no appointment found
+        navigate(`/dashboard/video-consultation/session-${user?.id?.slice(0,5)}-${selectedPatient.id.slice(0,5)}`);
+    }
+  };
+
+  if (loading && !selectedPatient) {
+    return <div className="h-full flex items-center justify-center">
+        <Activity className="w-12 h-12 text-blue-600 animate-spin" />
+    </div>;
+  }
 
   return (
     <div className="h-full flex gap-10 min-h-0">
@@ -81,7 +214,7 @@ export default function DoctorMessages() {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-          {mockPatients.map((patient) => (
+          {contacts.map((patient) => (
             <motion.div
               key={patient.id}
               whileHover={{ x: 5 }}
@@ -117,10 +250,17 @@ export default function DoctorMessages() {
               </div>
             </motion.div>
           ))}
+          {contacts.length === 0 && (
+            <div className="text-center py-20">
+                <MessageSquare className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active clinical links</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Chat Area */}
+      {selectedPatient ? (
       <div className="flex-1 flex flex-col bg-slate-950 rounded-[3.5rem] shadow-2xl overflow-hidden relative border border-white/5 h-[calc(100vh-14rem)] max-h-[850px] min-h-[500px]">
         <div className="p-10 border-b border-white/5 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-6">
@@ -136,11 +276,32 @@ export default function DoctorMessages() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="w-14 h-14 bg-white/5 text-white rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all">
+            <button 
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isCalling ? 'bg-rose-600 text-white animate-pulse' : 'bg-white/5 text-white hover:bg-white/10'}`}
+                onClick={() => {
+                    if (isCalling) {
+                        setIsCalling(false);
+                        toast.error('Voice link terminated');
+                    } else {
+                        setIsCalling(true);
+                        toast.success('Establishing secure voice link...');
+                        setTimeout(() => {
+                            if (window.confirm('Incoming clinical voice request. Accept?')) {
+                                toast.success('Voice connection active');
+                            } else {
+                                setIsCalling(false);
+                            }
+                        }, 2000);
+                    }
+                }}
+            >
               <Phone className="w-6 h-6" />
             </button>
-            <button className="w-14 h-14 bg-white/5 text-white rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all">
-              <Video className="w-6 h-6" />
+            <button 
+              onClick={handleStartConsultation}
+              className="w-14 h-14 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all group"
+            >
+              <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </button>
             <button className="w-14 h-14 bg-white/5 text-white rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all">
               <MoreVertical className="w-6 h-6" />
@@ -162,21 +323,21 @@ export default function DoctorMessages() {
                 key={msg.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`max-w-[70%] group`}>
                   <div className={`p-6 rounded-[2.5rem] text-sm font-medium leading-relaxed tracking-tight ${
-                    msg.sender === 'doctor' 
+                    msg.sender_id === user?.id 
                     ? 'bg-blue-600 text-white rounded-tr-none shadow-2xl shadow-blue-600/20' 
                     : 'bg-white/5 text-white rounded-tl-none border border-white/10'
                   }`}>
-                    {msg.text}
+                    {msg.content}
                   </div>
                   <div className={`mt-2 flex items-center gap-2 text-[8px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity ${
-                    msg.sender === 'doctor' ? 'justify-end' : 'justify-start'
+                    msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
                   }`}>
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    {msg.sender === 'doctor' && <CheckCheck className="w-3 h-3 text-emerald-400" />}
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {msg.sender_id === user?.id && <CheckCheck className="w-3 h-3 text-emerald-400" />}
                   </div>
                 </div>
               </motion.div>
@@ -211,6 +372,15 @@ export default function DoctorMessages() {
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-600/5 rounded-full blur-[80px] pointer-events-none" />
       </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 rounded-[3.5rem] border border-white/5">
+            <div className="w-24 h-24 bg-blue-600/10 rounded-[2rem] flex items-center justify-center mb-6">
+                <MessageSquare className="w-10 h-10 text-blue-500" />
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight">Clinical Dispatch Center</h2>
+            <p className="text-slate-500 font-medium mt-2">Select a patient link to establish secure communication.</p>
+        </div>
+      )}
     </div>
   );
 }

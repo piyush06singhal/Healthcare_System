@@ -146,11 +146,11 @@ export default function DoctorAIChat() {
       };
       setMessages(prev => [...prev, aiMsg]);
       if (reply) speakText(reply.substring(0, 300).replace(/[#*`]/g, ''));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
       const errorMsg: Message = { 
         id: (Date.now() + 1).toString(), 
-        text: "Error: AI engine connection failed. Check your secure uplink.", 
+        text: error.message || "Error: AI engine connection failed. Check your secure uplink.", 
         sender: 'ai', 
         timestamp: new Date() 
       };

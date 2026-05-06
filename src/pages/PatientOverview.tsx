@@ -17,7 +17,8 @@ import {
   FileText, 
   Plus,
   Pill,
-  History
+  History,
+  Video
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -107,6 +108,10 @@ export default function PatientOverview() {
   };
 
   const upcomingApts = appointments.slice(0, 2);
+  const hasActiveConsultation = appointments.some(apt => {
+    const today = new Date().toISOString().split('T')[0];
+    return apt.appointment_date.startsWith(today);
+  });
 
   return (
     <motion.div 
@@ -116,6 +121,30 @@ export default function PatientOverview() {
       className="space-y-10"
     >
       <AnimatePresence>
+        {hasActiveConsultation && (
+            <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                className="bg-rose-600 rounded-[2rem] p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-rose-200 overflow-hidden relative"
+            >
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-pulse">
+                        <Video className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h4 className="text-lg font-black tracking-tight">Active Clinical Session</h4>
+                        <p className="text-xs text-rose-100 font-medium tracking-wide">Your practitioner is waiting for you in the encrypted video suite.</p>
+                    </div>
+                </div>
+                <button 
+                  onClick={() => navigate('/dashboard/appointments')}
+                  className="px-8 py-3 bg-white text-rose-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all relative z-10 shadow-xl"
+                >
+                    Connect Now
+                </button>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+            </motion.div>
+        )}
         {showOnboarding && (
           <PatientOnboarding onComplete={() => {
             setShowOnboarding(false);

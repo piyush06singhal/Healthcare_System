@@ -75,6 +75,52 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from 'sonner';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { supabase } from './lib/supabase';
+import { useDispatch } from 'react-redux';
+import { setUser } from './store/authSlice';
+
+const ProfileInitializer = () => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (data && !error) {
+        dispatch(setUser(data));
+      }
+    };
+
+    fetchLatestProfile();
+    
+    // Set up global real-time subscription for current user
+    if (user?.id) {
+        const channel = supabase
+            .channel(`global-profile-${user.id}`)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'users',
+                filter: `id=eq.${user.id}`
+            }, (payload) => {
+                dispatch(setUser(payload.new as any));
+            })
+            .subscribe();
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+  }, [user?.id, dispatch]);
+
+  return null;
+};
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -124,6 +170,7 @@ const DashboardRoutes = () => {
           <Route path="calculators" element={<HealthCalculators />} />
           <Route path="video-gen" element={<VideoGeneration />} />
           <Route path="video-consultation" element={<VideoConsultation />} />
+          <Route path="video-consultation/:id" element={<VideoConsultation />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
@@ -139,6 +186,7 @@ export default function App() {
         <ErrorBoundary>
         <Router>
           <ScrollToTop />
+          <ProfileInitializer />
           <div className="min-h-screen flex flex-col">
             <Suspense fallback={<PageLoading />}>
               <Routes>

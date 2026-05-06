@@ -26,51 +26,93 @@ export default function PharmacyDashboard() {
 
   useEffect(() => {
     fetchPrescriptions();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('pharmacy-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'prescriptions' 
+      }, () => {
+        fetchPrescriptions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchPrescriptions = async () => {
     try {
       setLoading(true);
-      // In a real app, we'd fetch from a 'prescriptions' table
-      // For now, we'll mock some data based on appointments with notes
+      console.log('Pharmacy: Fetching prescriptions...');
+      // Simplify query to see if basic fetch works
       const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          date,
-          time,
-          notes,
-          patient:users!patient_id(id, name),
-          doctor:users!doctor_id(id, name)
-        `)
-        .not('notes', 'is', null)
-        .order('date', { ascending: false });
+        .from('prescriptions')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Pharmacy Fetch Error:', error);
+        if (error.message.includes('relation "public.prescriptions" does not exist')) {
+            toast.error('Database Table Missing: Please run prescriptions schema');
+        }
+        throw error;
+      }
 
-      // Add mock status and medication details
-      const enrichedData = (data || []).map(p => ({
-        ...p,
-        status: ['pending', 'processing', 'ready', 'picked_up'][Math.floor(Math.random() * 4)],
-        medication: p.notes?.split('-')[0]?.trim() || 'General Medication',
-        dosage: '500mg',
-        priority: Math.random() > 0.8 ? 'Urgent' : 'Normal'
+      if (!data || data.length === 0) {
+        console.log('Pharmacy: No prescriptions found in history.');
+      }
+
+      // Robust Join Logic: Manual hydration for cross-tenant visibility
+      const results = await Promise.all((data || []).map(async p => {
+        try {
+            // Patient hydration
+            const { data: patient } = await supabase.from('users').select('name').eq('id', p.patient_id).maybeSingle();
+            // Doctor hydration
+            const { data: doctor } = await supabase.from('users').select('name').eq('id', p.doctor_id).maybeSingle();
+
+            return {
+                ...p,
+                date: p.created_at ? format(new Date(p.created_at), 'yyyy-MM-dd') : 'N/A',
+                priority: p.status === 'pending' ? 'Urgent' : 'Normal',
+                patient: { name: patient?.name || 'External Patient' },
+                doctor: { name: doctor?.name || 'Clinical Staff' },
+                notes: `${p.medication} ${p.dosage}`
+            };
+        } catch (innerErr) {
+            return { ...p, patient: { name: 'Unknown' }, doctor: { name: 'Unknown' } };
+        }
       }));
 
-      setPrescriptions(enrichedData);
+      setPrescriptions(results);
     } catch (error) {
-      console.error('Error fetching prescriptions:', error);
+      console.error('Pharmacy Master Error:', error);
       toast.error('Failed to sync pharmacy records');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStatusUpdate = (id: string, newStatus: string) => {
-    setPrescriptions(prev => prev.map(p => 
-      p.id === id ? { ...p, status: newStatus } : p
-    ));
-    toast.success(`Order status updated to ${newStatus.replace('_', ' ')}`);
+  const handleStatusUpdate = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('prescriptions')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPrescriptions(prev => prev.map(p => 
+        p.id === id ? { ...p, status: newStatus } : p
+      ));
+      toast.success(`Order status updated to ${newStatus.replace('_', ' ')}`);
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Failed to update status');
+    }
   };
 
   const filteredPrescriptions = prescriptions.filter(p => {

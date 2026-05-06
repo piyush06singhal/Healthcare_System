@@ -145,11 +145,11 @@ export default function Chatbot() {
       if (reply) {
         handleSpeech(reply, aiMsg.id);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
       const errorMsg: Message = { 
         id: (Date.now() + 1).toString(), 
-        text: "System Error: AI engine connection failed. Please check your network or API configuration.", 
+        text: error.message || "System Error: AI engine connection failed. Please check your network or API configuration.", 
         sender: 'ai', 
         timestamp: new Date() 
       };

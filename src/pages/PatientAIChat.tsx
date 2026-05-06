@@ -85,12 +85,12 @@ export default function PatientAIChat() {
         timestamp: new Date().toISOString()
       };
       dispatch(addMessage(assistantMessage));
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Error:', error);
       dispatch(addMessage({ 
         id: (Date.now() + 1).toString(),
         sender: 'doctor' as const, 
-        text: "I'm having trouble connecting right now. Please try again later.",
+        text: error.message || "I'm having trouble connecting right now. Please try again later.",
         timestamp: new Date().toISOString()
       }));
     } finally {

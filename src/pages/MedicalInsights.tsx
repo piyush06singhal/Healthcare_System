@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { searchMedicalKnowledge } from '../lib/ai';
 import { Search, Globe, Loader2, ArrowRight, Shield, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 export default function MedicalInsights() {
   const [query, setQuery] = useState('');
@@ -14,21 +15,11 @@ export default function MedicalInsights() {
 
     setLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Provide a detailed medical insight about: ${query}. Focus on recent developments and clinical research.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
-      });
-
-      setResult({
-        text: response.text,
-        sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
-      });
-    } catch (error) {
+      const data = await searchMedicalKnowledge(query);
+      setResult(data);
+    } catch (error: any) {
       console.error('Search error:', error);
+      toast.error('Medical engine unavailable. Verify your API key in settings.');
     } finally {
       setLoading(false);
     }

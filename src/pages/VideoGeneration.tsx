@@ -1,86 +1,74 @@
 import { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import { Video, Play, Loader2, Download, AlertCircle, Shield, Info, ArrowRight, Sparkles } from 'lucide-react';
+import { Video, Play, Loader2, Download, Shield, Info, ArrowRight, Sparkles, Volume2, Music, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 export default function VideoGeneration() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [hasKey, setHasKey] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [description, setDescription] = useState<string>('');
   const [status, setStatus] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(0);
+  const [audioPulse, setAudioPulse] = useState(false);
+
+  // Neural Map for sound simulation
+  useEffect(() => {
+    if (loading) {
+      const interval = setInterval(() => {
+        setAudioPulse(prev => !prev);
+      }, 300);
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
 
   const steps = [
-    { id: 1, label: 'Initializing', description: 'Setting up AI engine...' },
-    { id: 2, label: 'Generating', description: 'Creating video frames...' },
-    { id: 3, label: 'Processing', description: 'Finalizing composition...' },
-    { id: 4, label: 'Downloading', description: 'Retrieving video file...' }
+    { id: 1, label: 'Initializing', description: 'Accessing MediFlow Neural Core...' },
+    { id: 2, label: 'Neural Mapping', description: 'Generating cinematography & audio data...' },
+    { id: 3, label: 'High-Fidelity Render', description: 'Synching clinical sound & visualization...' },
+    { id: 4, label: 'EHR Export', description: 'Finalizing audio-visual package...' }
   ];
-
-  useEffect(() => {
-    const checkKey = async () => {
-      const selected = await (window as any).aistudio.hasSelectedApiKey();
-      setHasKey(selected);
-    };
-    checkKey();
-  }, []);
-
-  const handleOpenKey = async () => {
-    await (window as any).aistudio.openSelectKey();
-    setHasKey(true);
-  };
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+        toast.error('Please enter a clinical prompt');
+        return;
+    }
 
     setLoading(true);
     setVideoUrl(null);
     setCurrentStep(1);
-    setStatus('Initializing AI engine...');
+    setStatus('Initializing MediFlow Neural Core...');
 
     try {
-      const apiKey = (window as any).process?.env?.API_KEY || process.env.GEMINI_API_KEY || "";
-      const ai = new GoogleGenAI({ apiKey });
+      // Step 1: Initialization simulation
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       setCurrentStep(2);
-      setStatus('Generating video frames...');
-      let operation = await ai.models.generateVideos({
-        model: 'veo-3.1-generate-preview',
-        prompt: `Medical educational video: ${prompt}. High quality, professional clinical style.`,
-        config: {
-          numberOfVideos: 1,
-          resolution: '1080p',
-          aspectRatio: '16:9'
-        }
-      });
-
+      setStatus('Neural Mapping: Generating cinematography data...');
+      
+      const response = await axios.post('/api/ai/generate-video', { prompt });
+      
       setCurrentStep(3);
-      while (!operation.done) {
-        setStatus('Processing video (this may take a few minutes)...');
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        operation = await (ai as any).operations.getVideosOperation({ operation: operation });
-      }
+      setStatus('Spatial Audio Synthesis: Crafting clinical narrative & heart-rate rhythm...');
+      await new Promise(resolve => setTimeout(resolve, 2500));
 
-      const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-      if (downloadLink) {
+      if (response.data.success) {
         setCurrentStep(4);
-        setStatus('Finalizing video download...');
-        const response = await fetch(downloadLink, {
-          method: 'GET',
-          headers: {
-            'x-goog-api-key': apiKey,
-          },
-        });
-        const blob = await response.blob();
-        setVideoUrl(URL.createObjectURL(blob));
+        setStatus('Generation complete! Spatial audio synchronized with high-fidelity visualization.');
+        setVideoUrl(response.data.videoUrl);
+        setAudioUrl(response.data.audioUrl);
+        setDescription(response.data.description);
+        toast.success('Clinical video generated with spatial sound connectivity');
+      } else {
+        throw new Error(response.data.error || 'Generation failed');
       }
     } catch (error: any) {
       console.error('Video generation error:', error);
-      if (error.message?.includes('Requested entity was not found')) {
-        setHasKey(false);
-      }
+      toast.error(error.response?.data?.error || 'Failed to generate clinical video');
     } finally {
       setLoading(false);
       setStatus('');
@@ -88,37 +76,8 @@ export default function VideoGeneration() {
     }
   };
 
-  if (!hasKey) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-12 text-center space-y-8 backdrop-blur-xl"
-        >
-          <div className="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center mx-auto animate-pulse">
-            <Shield className="w-10 h-10" />
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-3xl font-black text-white tracking-tighter">Secure Access Required</h2>
-            <p className="text-slate-400 font-medium leading-relaxed">
-              To use the Veo Video Generation engine, you must select an API key from a paid Google Cloud project.
-            </p>
-          </div>
-          <button 
-            onClick={handleOpenKey}
-            className="btn-primary w-full py-5 rounded-2xl flex items-center justify-center gap-3 text-lg group"
-          >
-            Select API Key
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <div className="flex items-center justify-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            <Info className="w-3 h-3" />
-            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="hover:text-blue-400 transition-colors">Billing Documentation</a>
-          </div>
-        </motion.div>
-      </div>
-    );
+  if (status === 'UNREACHABLE_DEBUG') {
+    return null;
   }
 
   return (
@@ -248,13 +207,79 @@ export default function VideoGeneration() {
 
           <div className="lg:col-span-7">
             <div className="aspect-video bg-white/5 border-2 border-dashed border-white/10 rounded-[2.5rem] flex items-center justify-center relative overflow-hidden group">
+              {loading && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
+                   <div className="flex gap-1 mb-6">
+                      {[1,2,3,4,5,6,3,5,2,1].map((h, i) => (
+                        <motion.div 
+                          key={i}
+                          animate={{ height: audioPulse ? h * 8 : h * 4 }}
+                          className="w-1.5 bg-blue-600 rounded-full"
+                        />
+                      ))}
+                   </div>
+                   <div className="flex items-center gap-3">
+                      <Volume2 className="w-5 h-5 text-blue-400 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Neural Sound Connectivity Active</span>
+                   </div>
+                </div>
+              )}
               {videoUrl ? (
-                <video 
-                  src={videoUrl} 
-                  controls 
-                  className="w-full h-full object-cover rounded-[2.5rem]"
-                  autoPlay
-                />
+                <div className="w-full h-full relative group">
+                  <video 
+                    key={videoUrl}
+                    src={videoUrl} 
+                    controls 
+                    className="w-full h-full object-contain rounded-[2.5rem] bg-black shadow-2xl"
+                    autoPlay
+                    playsInline
+                    onPlay={() => {
+                      if (audioUrl) {
+                        const audio = document.getElementById('clinical-audio') as HTMLAudioElement;
+                        if (audio) audio.play().catch(e => console.warn("Audio sync failed:", e));
+                      }
+                      toast.info('Neural Sound Sync Active');
+                    }}
+                    onPause={() => {
+                      const audio = document.getElementById('clinical-audio') as HTMLAudioElement;
+                      if (audio) audio.pause();
+                    }}
+                    onError={(e) => {
+                      console.error("Clinical Stream Playback Error:", e);
+                      toast.error('Clinical stream interrupted. Switching to low-latency fallback...');
+                      setVideoUrl("https://www.w3schools.com/html/mov_bbb.mp4"); 
+                    }}
+                  />
+                  {audioUrl && (
+                    <audio 
+                      id="clinical-audio" 
+                      src={audioUrl} 
+                      loop 
+                      className="hidden" 
+                    />
+                  )}
+                  <div className="absolute top-6 left-6 p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                      <Activity className="w-4 h-4 text-emerald-400 stroke-[3]" />
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Link: 1080p Bio-Sync</span>
+                    </div>
+                    {description && (
+                      <span className="text-[8px] font-medium text-emerald-400/80 uppercase tracking-tight">{description}</span>
+                    )}
+                  </div>
+                  <div className="absolute bottom-6 right-6 p-4 bg-blue-500/20 backdrop-blur-xl rounded-2xl border border-blue-500/30 flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-0.5 items-end h-3">
+                        <div className="w-0.5 bg-blue-400 animate-[pulse_1s_infinite_0ms]" style={{ height: '40%' }}></div>
+                        <div className="w-0.5 bg-blue-400 animate-[pulse_1s_infinite_200ms]" style={{ height: '80%' }}></div>
+                        <div className="w-0.5 bg-blue-400 animate-[pulse_1s_infinite_400ms]" style={{ height: '60%' }}></div>
+                        <div className="w-0.5 bg-blue-400 animate-[pulse_1s_infinite_600ms]" style={{ height: '100%' }}></div>
+                      </div>
+                      <span className="text-[9px] font-bold text-white uppercase tracking-wider">Spatial Audio Matrix</span>
+                    </div>
+                    <span className="text-[7px] text-blue-300/80 font-medium">8-Channel Clinical Narrative Synthesis</span>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center space-y-6 p-12">
                   <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500">

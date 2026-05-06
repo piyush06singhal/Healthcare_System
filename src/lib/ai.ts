@@ -1,22 +1,9 @@
 /// <reference types="vite/client" />
-import { GoogleGenAI, Modality, Type } from "@google/genai";
-
 import axios from "axios";
 
-// Initialize the AI client lazily
-let aiInstance: GoogleGenAI | null = null;
-
-const getAI = () => {
-  if (!aiInstance) {
-    // On static hosts like Vercel, we must use VITE_ prefixed variables for the frontend
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
-    if (!apiKey) {
-      console.warn("MediFlow AI Error: GEMINI_API_KEY not found in environment. AI features will be restricted.");
-    }
-    aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
-  }
-  return aiInstance;
-};
+// Unified AI Relay Engine v4.5
+// All AI requests are proxied via the MediFlow Secure Gateway (/api/ai/*)
+// to protect credentials and ensure clinical safety.
 
 export const generateAIResponse = async (message: string, history: any[] = [], role: 'doctor' | 'patient' = 'patient', clinicalContext: string = '') => {
   try {
@@ -25,83 +12,45 @@ export const generateAIResponse = async (message: string, history: any[] = [], r
       role,
       clinicalContext
     });
-    return response.data.reply;
-  } catch (error) {
-    console.error("Groq AI API Error:", error);
-    // Fallback to Gemini if backend fails
-    try {
-      const ai = getAI();
-      const formattedHistory = history.map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      }));
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          ...formattedHistory,
-          { role: 'user', parts: [{ text: message }] }
-        ],
-        config: {
-          systemInstruction: `You are MediFlow AI. ${clinicalContext}`,
-        }
-      });
-      return response.text;
-    } catch (fallbackError) {
-      console.error("AI Fallback Error:", fallbackError);
-      throw error;
-    }
+    if (response.data.reply) return response.data.reply;
+    throw new Error("No response from AI secure relay");
+  } catch (error: any) {
+    console.error("MediFlow AI Error:", error);
+    throw new Error(error.response?.data?.error || "AI Core link disrupted. Please verify credentials.");
   }
 };
 
 export const generateSymptomAnalysis = async (symptoms: string) => {
-  try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
-      contents: `Predict potential conditions based on these symptoms: ${symptoms}. 
-      Provide a highly detailed and structured clinical analysis including:
-      1. **Potential Diagnoses**: List 3-5 possible conditions.
-      2. **Differential Diagnosis**: Other conditions that might share these symptoms.
-      3. **Severity Assessment**: Low, Moderate, High, or Emergency.
-      4. **Actionable Next Steps**: Specific diagnostic tests or lifestyle changes.
-      5. **Specialist Recommendation**: Which type of doctor to see.
-      6. **Emergency Red Flags**: Specific "alarm symptoms" requiring immediate ER visit.`,
-      config: {
-        systemInstruction: "You are a professional clinical diagnostic assistant. Provide structured, evidence-based analysis."
-      }
-    });
+  return generateAIResponse(`Predict potential conditions based on these symptoms: ${symptoms}. Provide analysis for: Diagnoses, Severity, and Emergency Red Flags.`, [], 'patient', 'Symptom analysis request');
+};
 
-    return response.text;
-  } catch (error) {
-    console.error("Symptom Analysis Error:", error);
-    throw error;
+export const analyzeClinicalImage = async (base64Image: string, prompt: string = "Analyze this medical image for clinical findings. Return JSON.") => {
+  try {
+    const response = await axios.post('/api/ai/analyze-image', {
+      image: base64Image,
+      prompt: `${prompt} FORMAT: Respond strictly in JSON format with the following keys: findings, differentialDiagnosis, recommendations, anatomicalAssessment, severity, confidence.`
+    });
+    return response.data.result;
+  } catch (error: any) {
+    console.error("Clinical Vision Error:", error);
+    throw new Error(error.response?.data?.error || "Vision AI failed. Verify clinical secure uplink.");
+  }
+};
+
+export const searchMedicalKnowledge = async (query: string) => {
+  try {
+    const response = await axios.post('/api/ai/search', { query });
+    return {
+      text: response.data.text,
+      sources: response.data.sources || []
+    };
+  } catch (error: any) {
+    console.error("Medical Search Error:", error);
+    throw new Error(error.response?.data?.error || "Search engine failed.");
   }
 };
 
 export const generateSpeech = async (text: string) => {
-  try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-tts-preview",
-      contents: [{ parts: [{ text: `Say clearly and professionally: ${text}` }] }],
-      config: {
-        responseModalities: [Modality.AUDIO],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' },
-          },
-        },
-      },
-    });
-
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (base64Audio) {
-      return base64Audio;
-    }
-    return null;
-  } catch (error) {
-    console.error("Speech Generation Error:", error);
-    return null;
-  }
+  // TTS Relay integration can be added here
+  return null;
 };
