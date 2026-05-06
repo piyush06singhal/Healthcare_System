@@ -62,8 +62,10 @@ export default function ContactPage() {
       const serverMsg = error.response?.data?.error;
       const details = error.response?.data?.details;
       
+      const displayDetails = typeof details === 'object' ? JSON.stringify(details, null, 2) : details;
+      
       if (serverMsg) {
-        alert(`${serverMsg}${details ? '\n\nDetails: ' + details : ''}`);
+        alert(`${serverMsg}${displayDetails ? '\n\nDetails: ' + displayDetails : ''}`);
       } else {
         alert('Failed to send message via secure relay. Please try again later.');
       }
