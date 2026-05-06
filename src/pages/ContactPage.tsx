@@ -47,28 +47,54 @@ export default function ContactPage() {
     setIsSubmitting(true);
     
     try {
-      await axios.post('/api/contact', {
-        name: formData.name,
-        email: formData.email,
-        subject: formData.subject,
-        message: formData.message
-      });
+      // First try via our secure server proxy
+      try {
+        await axios.post('/api/contact', {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message
+        });
+      } catch (serverError: any) {
+        console.warn('Server relay failed, attempting direct client-side fallback...', serverError);
+        // Direct Fallback if server is not available (e.g. on pure static Vercel deployment)
+        await axios.post('https://api.emailjs.com/api/v1.0/email/send', {
+          service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_5smusmb',
+          template_id: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_owrzd6e',
+          user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '6chpD-awnqZPZdHgN',
+          template_params: {
+            name: formData.name,
+            email: formData.email,
+            title: formData.subject,
+            message: formData.message,
+            to_email: 'piyush.singhal.2004@gmail.com',
+          }
+        });
+      }
       
       setIsSubmitted(true);
       setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (error: any) {
       console.error('Contact form error:', error);
-      const serverMsg = error.response?.data?.error;
-      const details = error.response?.data?.details;
-      
-      const displayDetails = typeof details === 'object' ? JSON.stringify(details, null, 2) : details;
-      
-      if (serverMsg) {
-        alert(`${serverMsg}${displayDetails ? '\n\nDetails: ' + displayDetails : ''}`);
+      let errorTitle = 'Failed to send message.';
+      let errorDetails = '';
+
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (typeof data === 'string') {
+          errorDetails = data;
+        } else {
+          errorTitle = data.error || errorTitle;
+          const detailValue = data.details || data.message || '';
+          errorDetails = typeof detailValue === 'object' ? JSON.stringify(detailValue, null, 2) : detailValue;
+        }
       } else {
-        alert('Failed to send message via secure relay. Please try again later.');
+        errorDetails = error.message || 'Unknown network error';
       }
+
+      const displayTitle = typeof errorTitle === 'object' ? JSON.stringify(errorTitle) : errorTitle;
+      alert(`${displayTitle}\n\nDetails: ${errorDetails}`);
     } finally {
       setIsSubmitting(false);
     }

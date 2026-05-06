@@ -14,13 +14,22 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if we have a session (the reset link should have provided one)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check for session - Supabase automatically handles the hash/access_token
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Invalid or expired reset link.');
-        navigate('/login');
+        // If no session immediately, give it a tiny bit of time for the hash to be processed
+        setTimeout(async () => {
+          const { data: { secondSession } } = await supabase.auth.getSession() as any;
+          if (!secondSession) {
+            toast.error('Invalid or expired reset link.');
+            navigate('/login');
+          }
+        }, 500);
       }
-    });
+    };
+    
+    checkSession();
   }, [navigate]);
 
   const handleReset = async (e: React.FormEvent) => {
