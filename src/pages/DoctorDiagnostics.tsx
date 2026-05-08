@@ -134,7 +134,7 @@ export default function DoctorDiagnostics() {
       const displayResult = {
         ...data,
         ...result,
-        date: new Date(data.created_at).toISOString().split('T')[0],
+        date: data.created_at && !isNaN(new Date(data.created_at).getTime()) ? new Date(data.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         patient: 'Stored Case'
       };
 
@@ -166,6 +166,15 @@ export default function DoctorDiagnostics() {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1 }
+  };
+
+  const getSystemHealthColorClasses = (color: string) => {
+    switch (color) {
+      case 'blue': return 'bg-blue-50 text-blue-600';
+      case 'purple': return 'bg-purple-50 text-purple-600';
+      case 'emerald': return 'bg-emerald-50 text-emerald-600';
+      default: return 'bg-slate-50 text-slate-600';
+    }
   };
 
   return (
@@ -485,7 +494,7 @@ export default function DoctorDiagnostics() {
               ].map((stat, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-${stat.color}-50 text-${stat.color}-600`}>
+                    <div className={`p-2 rounded-lg ${getSystemHealthColorClasses(stat.color)}`}>
                       {stat.icon}
                     </div>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</span>
@@ -512,7 +521,7 @@ export default function DoctorDiagnostics() {
                     setAnalysisResult({
                         ...item,
                         ...item.findings,
-                        date: new Date(item.created_at).toISOString().split('T')[0],
+                        date: item.created_at && !isNaN(new Date(item.created_at).getTime()) ? new Date(item.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                         patient: 'Archived Case'
                     });
                   }}
@@ -520,7 +529,7 @@ export default function DoctorDiagnostics() {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        {new Date(item.created_at).toLocaleDateString()}
+                        {item.created_at && !isNaN(new Date(item.created_at).getTime()) ? new Date(item.created_at).toLocaleDateString() : 'N/A'}
                     </span>
                     <div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase tracking-widest">
                       {item.confidence}% Conf.

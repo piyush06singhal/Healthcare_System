@@ -15,9 +15,11 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { toast } from 'sonner';
+import { generateAIResponse } from '../lib/ai';
+import { setAiSummary } from '../store/healthSlice';
 import { 
   BarChart, 
   Bar, 
@@ -38,7 +40,43 @@ import {
 export default function DoctorInsights() {
   const [search, setSearch] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
-  const { notifications, appointments, tasks } = useSelector((state: RootState) => state.health);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { notifications, appointments, tasks, prescriptions, adherenceLogs, aiSummary } = useSelector((state: RootState) => state.health);
+  const dispatch = useDispatch();
+
+  const handleDeepAnalysis = async () => {
+    setIsAnalyzing(true);
+    try {
+      const activePrescriptions = prescriptions.map(p => `- ${p.medication}: ${p.adherence_rate}% adherence`).join('\n');
+      const recentAdherence = adherenceLogs.slice(0, 5).map(l => `- Dose on ${l.taken_at && !isNaN(new Date(l.taken_at).getTime()) ? new Date(l.taken_at).toLocaleString() : 'N/A'}: ${l.status}`).join('\n');
+      
+      const context = `
+      CURRENT PRACTICE DATA:
+      - Active Patients: ${appointments.length}
+      - Pending Tasks: ${tasks.filter(t => !t.completed).length}
+      
+      ADHERENCE OVERVIEW:
+      ${activePrescriptions}
+      
+      RECENT ACTIVITY LOGS:
+      ${recentAdherence}
+      `;
+
+      const response = await generateAIResponse(
+        "Analyze the current practice data and focus specifically on patient medication adherence trends. Identify potential risks and suggest clinical optimizations.",
+        [], 
+        'doctor',
+        context
+      );
+      
+      dispatch(setAiSummary(response));
+      toast.success("Clinical insight core updated.");
+    } catch (error) {
+      toast.error("AI Insight core failed to synchronize.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -157,6 +195,39 @@ export default function DoctorInsights() {
             placeholder="Search intelligence..." 
             className="pl-14 pr-8 py-5 rounded-[2rem] bg-white border border-slate-100 text-base focus:outline-none focus:ring-8 focus:ring-blue-600/5 focus:border-blue-600 transition-all w-full lg:w-96 text-slate-900 shadow-2xl shadow-slate-200/60 font-medium"
           />
+        </div>
+      </div>
+
+      <div className="card p-12 bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl relative overflow-hidden group">
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+          <div className="space-y-6 max-w-2xl">
+            <div className="flex items-center gap-3">
+              <Brain className="w-10 h-10" />
+              <h2 className="text-3xl font-black tracking-tight">Practice Core Intelligence</h2>
+            </div>
+            <p className="text-lg font-medium text-blue-50/80 leading-relaxed">
+              Analyze practice-wide medication adherence and clinical task throughput with Llama 3.3 70B reasoning.
+            </p>
+            {aiSummary && (
+              <div className="p-8 bg-white/10 rounded-3xl border border-white/20 backdrop-blur-md max-h-64 overflow-y-auto custom-scrollbar">
+                <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                  {aiSummary}
+                </p>
+              </div>
+            )}
+            <button 
+              onClick={handleDeepAnalysis}
+              disabled={isAnalyzing}
+              className="px-10 py-5 bg-white text-blue-600 rounded-[2rem] font-black text-[11px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center gap-3 disabled:opacity-50 active:scale-95"
+            >
+              {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+              {aiSummary ? 'Refresh Practice Analysis' : 'Initialize Clinical Deep Dive'}
+            </button>
+          </div>
+          <div className="hidden lg:block w-96 h-96 relative">
+             <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse blur-3xl" />
+             <Activity className="absolute inset-0 m-auto w-48 h-48 text-white/40 animate-pulse" />
+          </div>
         </div>
       </div>
 

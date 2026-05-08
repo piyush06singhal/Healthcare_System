@@ -336,7 +336,7 @@ export default function DoctorMessages() {
                   <div className={`mt-2 flex items-center gap-2 text-[8px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity ${
                     msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
                   }`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {msg.created_at && !isNaN(new Date(msg.created_at).getTime()) ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     {msg.sender_id === user?.id && <CheckCheck className="w-3 h-3 text-emerald-400" />}
                   </div>
                 </div>

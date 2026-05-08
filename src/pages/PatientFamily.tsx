@@ -13,23 +13,98 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { switchProfile } from '../store/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 export default function PatientFamily() {
   const { user, activeProfile } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [dbMembers, setDbMembers] = useState<any[]>([]);
 
-  // Mock dependents if not in state
-  const familyMembers = [
-    { id: user?.id || 'primary', name: user?.name || 'Primary User', role: 'patient', relation: 'Self', avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100" },
-    { id: 'f1', name: 'Aarya Singhal', role: 'patient', relation: 'Daughter', avatar: "https://images.unsplash.com/photo-1517677129300-07b130802f46?auto=format&fit=crop&q=80&w=100" },
-    { id: 'f2', name: 'Suman Singhal', role: 'patient', relation: 'Mother', avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100" },
-  ];
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchMembers = async () => {
+      const { data, error } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      
+      if (!error && data) setDbMembers(data);
+    };
+
+    fetchMembers();
+
+    const channel = supabase
+      .channel('family_members_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'family_members',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setDbMembers(prev => [...prev, payload.new]);
+        } else if (payload.eventType === 'DELETE') {
+          setDbMembers(prev => prev.filter(m => m.id !== payload.old.id));
+        } else if (payload.eventType === 'UPDATE') {
+          setDbMembers(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const familyMembers = useMemo(() => {
+    const primary = { 
+      id: user?.id || 'primary', 
+      name: user?.name || 'Primary User', 
+      role: 'patient', 
+      relation: 'Self', 
+      avatar: (user as any)?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100",
+      health_score: 95,
+      active_meds: 1
+    };
+
+    const members = dbMembers.map(m => ({
+      id: m.id,
+      name: m.name,
+      role: 'patient',
+      relation: m.relation,
+      avatar: m.avatar_url || `https://i.pravatar.cc/150?u=${m.id}`,
+      health_score: m.health_score,
+      active_meds: m.active_meds
+    }));
+
+    return [primary, ...members];
+  }, [user, dbMembers]);
+
+  const handleAddMember = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase.from('family_members').insert([{
+        user_id: user.id,
+        name: 'New Dependent',
+        relation: 'Dependent',
+        blood_group: 'Pending',
+        last_checkup: new Date().toLocaleDateString()
+      }]);
+
+      if (error) throw error;
+      toast.success('New dependent profile initialized in clinical vault.');
+    } catch (err) {
+      toast.error('Failed to synchronize family record.');
+    }
+  };
 
   const handleSwitch = (member: any) => {
     dispatch(switchProfile({
@@ -79,7 +154,10 @@ export default function PatientFamily() {
             Manage healthcare protocols for your loved ones from a single unified hub.
           </p>
         </div>
-        <button className="px-10 py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-slate-900/20 hover:bg-indigo-600 transition-all flex items-center gap-4 group">
+        <button 
+          onClick={handleAddMember}
+          className="px-10 py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-slate-900/20 hover:bg-indigo-600 transition-all flex items-center gap-4 group"
+        >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
           Add Dependent
         </button>
@@ -116,11 +194,11 @@ export default function PatientFamily() {
                     <div className="flex items-center gap-4 mt-3">
                       <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
                         <Activity className="w-3.5 h-3.5" />
-                        88/100 Core Health
+                        {member.health_score}/100 Core Health
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         <Pill className="w-3.5 h-3.5" />
-                        1 Active Med
+                        {member.active_meds} Active Med{member.active_meds !== 1 ? 's' : ''}
                       </div>
                     </div>
                   </div>
@@ -175,25 +253,23 @@ export default function PatientFamily() {
             variants={itemVariants}
             className="bg-white p-10 rounded-[3.5rem] shadow-xl border border-slate-100 group"
           >
-            <h3 className="text-xl font-black text-slate-900 mb-8">Timeline</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-8">Clinical Timeline</h3>
             <div className="space-y-8">
-              {[
-                { activity: 'Checkup', member: 'Aarya Singhal', date: 'Upcoming: May 12' },
-                { activity: 'Medication Update', member: 'Suman Singhal', date: 'Recorded 2h ago' },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-4 group/item">
-                  <div className="w-1 h-full bg-slate-100 rounded-full group-hover/item:bg-indigo-600 transition-colors" />
-                  <div>
-                    <div className="text-xs font-black text-slate-900 group-hover/item:text-indigo-600 transition-colors uppercase tracking-widest">{item.activity}</div>
-                    <div className="text-[10px] font-bold text-slate-400 mt-1">{item.member}</div>
-                    <div className="text-[10px] font-black text-indigo-600 mt-2 uppercase tracking-widest">{item.date}</div>
+              {dbMembers.length === 0 ? (
+                 <p className="text-[10px] font-medium text-slate-400 italic">No recent family health activities recorded.</p>
+              ) : (
+                dbMembers.slice(0, 3).map((item, i) => (
+                  <div key={i} className="flex gap-4 group/item">
+                    <div className="w-1 h-full bg-slate-100 rounded-full group-hover/item:bg-indigo-600 transition-colors" />
+                    <div>
+                      <div className="text-xs font-black text-slate-900 group-hover/item:text-indigo-600 transition-colors uppercase tracking-widest">Profile Sync</div>
+                      <div className="text-[10px] font-bold text-slate-400 mt-1">{item.name}</div>
+                      <div className="text-[10px] font-black text-indigo-600 mt-2 uppercase tracking-widest">{item.relation} Protocol Active</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-            <button className="w-full mt-10 py-5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-              View Audit Log
-            </button>
           </motion.div>
         </div>
       </div>

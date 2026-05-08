@@ -31,7 +31,7 @@ interface Message {
 
 interface Appointment {
   id: string;
-  doctor: {
+  doctor?: {
     id: string;
     name: string;
     specialty: string;
@@ -42,7 +42,12 @@ interface Appointment {
   };
   patient_id?: string;
   doctor_id?: string;
+  patient_name?: string;
+  doctor_name?: string;
   appointment_date: string;
+  date?: string;
+  time?: string;
+  type?: string;
   status: 'pending' | 'accepted' | 'declined' | 'completed';
   reason: string;
   priority?: 'low' | 'medium' | 'urgent' | 'critical';
@@ -59,14 +64,29 @@ interface Notification {
 
 interface Prescription {
   id: string;
-  name: string;
+  medication?: string; // Standardize to database column name
+  name?: string;       // Keep for backward compatibility if used
   dosage: string;
   frequency: string;
-  remaining: number;
-  total: number;
-  doctor: string;
-  status: 'Active' | 'Paused' | 'Completed';
-  category: string;
+  remaining?: number;
+  total?: number;
+  doctor_id?: string;
+  patient_id?: string;
+  doctor?: string;
+  status: string;
+  category?: string;
+  adherence_rate?: number;
+  last_dose_taken?: string;
+  created_at?: string;
+}
+
+export interface AdherenceLog {
+  id: string;
+  prescription_id: string;
+  patient_id: string;
+  taken_at: string;
+  status: 'taken' | 'skipped' | 'late';
+  notes?: string;
 }
 
 interface Practitioner {
@@ -92,6 +112,7 @@ interface HealthState {
   practitioners: Practitioner[];
   treatments: Treatment[];
   prescriptions: Prescription[];
+  adherenceLogs: AdherenceLog[];
   appointments: Appointment[];
   messages: Message[];
   notifications: Notification[];
@@ -108,8 +129,13 @@ const initialState: HealthState = {
     oxygen: '--',
     lastUpdated: new Date().toISOString(),
   },
-  practitioners: [],
+  practitioners: [
+    { id: 'staff-01', name: 'Dr. Sarah Mitchell', specialty: 'General Physician', status: 'Active', email: 'sarah.m@mediflow.ai' },
+    { id: 'staff-02', name: 'Dr. James Wilson', specialty: 'Cardiologist', status: 'Active', email: 'james.w@mediflow.ai' },
+    { id: 'staff-03', name: 'Dr. Elena Rodriguez', specialty: 'Neurologist', status: 'Active', email: 'elena.r@mediflow.ai' }
+  ],
   prescriptions: [],
+  adherenceLogs: [],
   treatments: [],
   appointments: [],
   messages: [],
@@ -124,7 +150,21 @@ const healthSlice = createSlice({
   initialState,
   reducers: {
     updateBiometrics: (state, action: PayloadAction<Partial<BiometricData>>) => {
-      state.biometrics = { ...state.biometrics, ...action.payload, lastUpdated: new Date().toISOString() };
+      const newBiometrics = { ...state.biometrics, ...action.payload, lastUpdated: new Date().toISOString() };
+      
+      // If a new heart rate value was provided as a string, push it to history
+      if (action.payload.heartRate && Array.isArray(action.payload.heartRate) && action.payload.heartRate.length === 1) {
+        const newReading = action.payload.heartRate[0];
+        // Only push if it's actually NEW (avoiding duplicate sync loops)
+        const lastReading = state.biometrics.heartRate[state.biometrics.heartRate.length - 1];
+        if (!lastReading || lastReading.time !== newReading.time) {
+          newBiometrics.heartRate = [...state.biometrics.heartRate, newReading].slice(-24); // Keep last 24
+        } else {
+          newBiometrics.heartRate = state.biometrics.heartRate;
+        }
+      }
+      
+      state.biometrics = newBiometrics;
     },
     addMessage: (state, action: PayloadAction<Message>) => {
       // Prevent duplicates
@@ -146,6 +186,14 @@ const healthSlice = createSlice({
     setPrescriptions: (state, action: PayloadAction<Prescription[]>) => {
       state.prescriptions = action.payload;
     },
+    setAdherenceLogs: (state, action: PayloadAction<AdherenceLog[]>) => {
+      state.adherenceLogs = action.payload;
+    },
+    addAdherenceLog: (state, action: PayloadAction<AdherenceLog>) => {
+      if (!state.adherenceLogs.find(l => l.id === action.payload.id)) {
+        state.adherenceLogs.unshift(action.payload);
+      }
+    },
     takeDose: (state, action: PayloadAction<string>) => {
       const rx = state.prescriptions.find(p => p.id === action.payload);
       if (rx && rx.remaining > 0) {
@@ -153,7 +201,12 @@ const healthSlice = createSlice({
       }
     },
     addDiagnostic: (state, action: PayloadAction<any>) => {
-      state.diagnostics.unshift(action.payload);
+      if (!state.diagnostics.find(d => d.id === action.payload.id)) {
+        state.diagnostics.unshift(action.payload);
+      }
+    },
+    setDiagnostics: (state, action: PayloadAction<any[]>) => {
+      state.diagnostics = action.payload;
     },
     addAppointment: (state, action: PayloadAction<Appointment>) => {
       if (!state.appointments.find(a => a.id === action.payload.id)) {
@@ -221,7 +274,10 @@ export const {
   takeDose, 
   addPrescription, 
   setPrescriptions,
+  setAdherenceLogs,
+  addAdherenceLog,
   addDiagnostic,
+  setDiagnostics,
   addAppointment,
   markNotificationRead,
   addNotification,

@@ -37,6 +37,15 @@ export default function DoctorAIWorkbench() {
     }
   };
 
+  const getMetricColorClasses = (color: string) => {
+    switch (color) {
+      case 'emerald': return 'bg-emerald-50 text-emerald-600';
+      case 'blue': return 'bg-blue-50 text-blue-600';
+      case 'indigo': return 'bg-indigo-50 text-indigo-600';
+      default: return 'bg-slate-50 text-slate-600';
+    }
+  };
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -115,7 +124,7 @@ export default function DoctorAIWorkbench() {
             variants={itemVariants}
             className="p-6 bg-white rounded-3xl shadow-xl border border-slate-100 flex items-center gap-5"
           >
-            <div className={`w-12 h-12 bg-${m.color}-50 text-${m.color}-600 rounded-2xl flex items-center justify-center`}>
+            <div className={`w-12 h-12 ${getMetricColorClasses(m.color)} rounded-2xl flex items-center justify-center`}>
               {m.icon}
             </div>
             <div>

@@ -59,9 +59,9 @@ export default function ContactPage() {
         console.warn('Server relay failed, attempting direct client-side fallback...', serverError);
         // Direct Fallback if server is not available (e.g. on pure static Vercel deployment)
         await axios.post('https://api.emailjs.com/api/v1.0/email/send', {
-          service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_5smusmb',
-          template_id: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_owrzd6e',
-          user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '6chpD-awnqZPZdHgN',
+          service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+          template_id: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+          user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
           template_params: {
             name: formData.name,
             email: formData.email,

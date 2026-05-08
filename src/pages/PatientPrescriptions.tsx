@@ -17,40 +17,162 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { takeDose, addNotification } from '../store/healthSlice';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import GenericModal from '../components/GenericModal';
 
 export default function PatientPrescriptions() {
-  const { prescriptions } = useSelector((state: RootState) => state.health);
+  const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const [isRefillModalOpen, setIsRefillModalOpen] = useState(false);
   const [refillData, setRefillData] = useState({ scriptId: '', urgency: 'Normal' });
+  const [refillRequests, setRefillRequests] = useState<any[]>([]);
+  const [dbPrescriptions, setDbPrescriptions] = useState<any[]>([]);
 
-  const handleTakeDose = (id: string, name: string) => {
-    dispatch(takeDose(id));
-    toast.success(`Dose tracked for ${name}. Stability update sent to clinic.`);
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchPrescriptions = async () => {
+      const { data, error } = await supabase
+        .from('prescriptions')
+        .select('*')
+        .eq('patient_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setDbPrescriptions(data);
+      }
+    };
+
+    const fetchRefills = async () => {
+      const { data } = await supabase
+        .from('refill_requests')
+        .select('*, prescriptions(medication)')
+        .eq('patient_id', user.id)
+        .order('created_at', { ascending: false });
+      if (data) setRefillRequests(data);
+    };
+
+    fetchPrescriptions();
+    fetchRefills();
+
+    const prescriptionsChannel = supabase
+      .channel('prescriptions_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'prescriptions',
+        filter: `patient_id=eq.${user.id}`
+      }, fetchPrescriptions)
+      .subscribe();
+
+    const refillsChannel = supabase
+      .channel('refills_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'refill_requests', 
+        filter: `patient_id=eq.${user.id}` 
+      }, fetchRefills)
+      .subscribe();
+    
+    return () => { 
+      supabase.removeChannel(prescriptionsChannel);
+      supabase.removeChannel(refillsChannel);
+    };
+  }, [user]);
+
+  const prescriptions = useMemo(() => {
+    return dbPrescriptions.map(p => ({
+      id: p.id,
+      name: p.medication,
+      category: 'In-Patient Protocol',
+      dosage: p.dosage,
+      frequency: p.frequency,
+      doctor: 'Dr. Sarah Mitchell',
+      status: p.status === 'Active' ? 'Active' : 'Pending',
+      remaining: 10, // Simulated logic if not in DB
+      total: 30
+    }));
+  }, [dbPrescriptions]);
+
+  const handleTakeDose = async (id: string, name: string) => {
+    try {
+      if (!user) return;
+
+      // 1. Log the adherence entry
+      const { error: logError } = await supabase
+        .from('medication_adherence')
+        .insert([{
+          prescription_id: id,
+          patient_id: user.id,
+          status: 'taken',
+          taken_at: new Date().toISOString()
+        }]);
+
+      if (logError) throw logError;
+
+      // 2. Update prescription record
+      const { error: updateError } = await supabase
+        .from('prescriptions')
+        .update({
+          last_dose_taken: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      // Optimistic Update
+      setDbPrescriptions(prev => prev.map(p => 
+        p.id === id ? { ...p, remaining: Math.max(0, (p.remaining || 10) - 1), last_dose_taken: new Date().toISOString() } : p
+      ));
+      
+      dispatch(takeDose(id));
+      toast.success(`Dose tracked for ${name}. Stability update sent to clinic.`, {
+        icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+      });
+    } catch (error: any) {
+      console.error("Adherence Log Error:", error);
+      toast.error("Failed to sync dose tracking. Please check connection.");
+    }
   };
 
-  const handleRequestRefill = () => {
+  const handleRequestRefill = async () => {
     if (!refillData.scriptId) {
       toast.error('Please select a medication protocol for re-supply.');
       return;
     }
 
+    if (!user) return;
+
     const med = prescriptions.find(p => p.id === refillData.scriptId);
     
-    dispatch(addNotification({
-      id: `notif-${Date.now()}`,
-      title: 'Refill Protocol Initialized',
-      message: `A supply request for ${med?.name} has been dispatched to ${med?.doctor}.`,
-      type: 'info',
-      timestamp: new Date().toISOString(),
-      read: false
-    }));
+    try {
+      const { error } = await supabase.from('refill_requests').insert([{
+        prescription_id: refillData.scriptId,
+        patient_id: user.id,
+        priority: refillData.urgency.toLowerCase(),
+        status: 'pending'
+      }]);
 
-    toast.success(`Refill request for ${med?.name} sent to ${med?.doctor}.`);
-    setIsRefillModalOpen(false);
+      if (error) throw error;
+
+      dispatch(addNotification({
+        id: `notif-${Date.now()}`,
+        title: 'Refill Protocol Initialized',
+        message: `A supply request for ${med?.name} has been dispatched to ${med?.doctor}.`,
+        type: 'info',
+        timestamp: new Date().toISOString(),
+        read: false
+      }));
+
+      toast.success(`Refill request for ${med?.name} sent to clinical pharmacy.`);
+      setIsRefillModalOpen(false);
+    } catch (error) {
+      console.error("Refill error:", error);
+      toast.error("Failed to synchronize refill request with clinical cloud.");
+    }
   };
 
   const containerVariants = {
@@ -196,6 +318,36 @@ export default function PatientPrescriptions() {
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          <motion.div 
+            variants={itemVariants}
+            className="bg-white rounded-[3.5rem] p-10 shadow-xl border border-slate-100"
+          >
+             <h3 className="text-xl font-black text-slate-900 mb-8">Refill Logistics</h3>
+             <div className="space-y-6">
+                {refillRequests.length === 0 ? (
+                  <p className="text-[10px] font-medium text-slate-400 italic text-center">No active logistics requests</p>
+                ) : (
+                  refillRequests.map(req => (
+                    <div key={req.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          {req.created_at && !isNaN(new Date(req.created_at).getTime()) ? new Date(req.created_at).toLocaleDateString() : 'N/A'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${
+                          req.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          {req.status}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        Refill: {req.prescriptions?.medication || 'Protocol'}
+                      </div>
+                    </div>
+                  ))
+                )}
+             </div>
           </motion.div>
 
           <motion.div 

@@ -131,7 +131,44 @@ export default function PatientDetail() {
   const handleAddExam = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      toast.success('Examination record saved successfully');
+      if (!id) return;
+
+      // 1. Update Biometrics (Real-time sync)
+      const { error: bioError } = await supabase
+        .from('user_biometrics')
+        .upsert({
+          user_id: id,
+          heart_rate: examData.vitals.heartRate,
+          blood_pressure: examData.vitals.bp,
+          glucose: examData.vitals.glucose,
+          oxygen: '98', // Assuming 98 if not provided
+          last_updated: new Date().toISOString()
+        });
+
+      if (bioError) throw bioError;
+
+      // 2. Add Diagnostic Record
+      const { error: diagError } = await supabase
+        .from('diagnostics')
+        .insert({
+          patient_id: id,
+          doctor_id: (await supabase.auth.getUser()).data.user?.id,
+          type: 'Examination',
+          results: {
+            symptoms: examData.symptoms,
+            physicalExam: examData.physicalExam,
+            diagnosis: examData.diagnosis,
+            plan: examData.plan,
+            vitals: examData.vitals
+          },
+          status: 'final'
+        });
+
+      if (diagError) throw diagError;
+
+      toast.success('Examination record saved successfully', {
+        description: 'Vitals have been updated across the patient portal.'
+      });
       setIsExamModalOpen(false);
       // Reset form
       setExamData({
@@ -142,6 +179,7 @@ export default function PatientDetail() {
         vitals: { heartRate: '72', bp: '120/80', glucose: '96', temp: '98.6' }
       });
     } catch (error) {
+      console.error('Save Exam Error:', error);
       toast.error('Failed to save examination');
     }
   };
@@ -325,16 +363,16 @@ export default function PatientDetail() {
               {/* Vital Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {[
-                  { label: 'Heart Rate', value: '72', unit: 'BPM', icon: <Heart className="w-6 h-6" />, color: 'rose', trend: '-2%' },
-                  { label: 'Blood Pressure', value: '120/80', unit: 'mmHg', icon: <Activity className="w-6 h-6" />, color: 'blue', trend: '+1%' },
-                  { label: 'Glucose', value: '96', unit: 'mg/dL', icon: <Droplets className="w-6 h-6" />, color: 'emerald', trend: 'Stable' },
+                  { label: 'Heart Rate', value: '72', unit: 'BPM', icon: <Heart className="w-6 h-6" />, color: 'rose', trend: '-2%', bg: 'bg-rose-50', text: 'text-rose-600', blur: 'bg-rose-500/5' },
+                  { label: 'Blood Pressure', value: '120/80', unit: 'mmHg', icon: <Activity className="w-6 h-6" />, color: 'blue', trend: '+1%', bg: 'bg-blue-50', text: 'text-blue-600', blur: 'bg-blue-500/5' },
+                  { label: 'Glucose', value: '96', unit: 'mg/dL', icon: <Droplets className="w-6 h-6" />, color: 'emerald', trend: 'Stable', bg: 'bg-emerald-50', text: 'text-emerald-600', blur: 'bg-emerald-500/5' },
                 ].map((vital, i) => (
                   <motion.div 
                     key={i}
                     variants={itemVariants}
                     className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group"
                   >
-                    <div className={`w-12 h-12 rounded-2xl bg-${vital.color}-50 text-${vital.color}-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                    <div className={`w-12 h-12 rounded-2xl ${vital.bg} ${vital.text} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                       {vital.icon}
                     </div>
                     <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{vital.label}</div>
@@ -348,7 +386,7 @@ export default function PatientDetail() {
                         {vital.trend}
                       </span>
                     </div>
-                    <div className={`absolute -right-4 -bottom-4 w-20 h-20 bg-${vital.color}-500/5 rounded-full blur-2xl`} />
+                    <div className={`absolute -right-4 -bottom-4 w-20 h-20 ${vital.blur} rounded-full blur-2xl`} />
                   </motion.div>
                 ))}
               </div>

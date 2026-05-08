@@ -601,7 +601,12 @@ export default function DoctorOverview() {
             ].map((v, i) => (
               <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{v.label}</div>
-                <div className={`text-xl font-black text-${v.color}-600 tracking-tight`}>{v.value} <span className="text-[10px] text-slate-400">{v.unit}</span></div>
+                <div className={`text-xl font-black tracking-tight ${
+                  v.color === 'rose' ? 'text-rose-600' :
+                  v.color === 'blue' ? 'text-blue-600' :
+                  v.color === 'amber' ? 'text-amber-600' :
+                  'text-emerald-600'
+                }`}>{v.value} <span className="text-[10px] text-slate-400">{v.unit}</span></div>
               </div>
             ))}
           </div>

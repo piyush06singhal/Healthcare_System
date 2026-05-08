@@ -130,8 +130,14 @@ export default function DoctorSchedule() {
         if (isBlocked[dateStr]) continue;
 
         const slots: string[] = [];
-        let current = new Date(`2000-01-01T${recurringRule.startTime}`);
-        const endT = new Date(`2000-01-01T${recurringRule.endTime}`);
+        const startTimeStr = `2000-01-01T${recurringRule.startTime}`;
+        const endTimeStr = `2000-01-01T${recurringRule.endTime}`;
+        let current = new Date(startTimeStr);
+        const endT = new Date(endTimeStr);
+
+        if (isNaN(current.getTime()) || isNaN(endT.getTime())) {
+          continue;
+        }
         
         while (current < endT) {
           slots.push(format(current, 'HH:mm'));

@@ -109,9 +109,30 @@ export default function PatientOverview() {
 
   const upcomingApts = appointments.slice(0, 2);
   const hasActiveConsultation = appointments.some(apt => {
+    if (!apt.appointment_date) return false;
     const today = new Date().toISOString().split('T')[0];
     return apt.appointment_date.startsWith(today);
   });
+
+  const getStatColors = (color: string) => {
+    const map: Record<string, string> = {
+      rose: 'bg-rose-50 text-rose-600 shadow-rose-600/5',
+      blue: 'bg-blue-50 text-blue-600 shadow-blue-600/5',
+      amber: 'bg-amber-50 text-amber-600 shadow-amber-600/5',
+      emerald: 'bg-emerald-50 text-emerald-600 shadow-emerald-600/5'
+    };
+    return map[color] || 'bg-slate-50 text-slate-600 shadow-slate-600/5';
+  };
+
+  const getStatBlur = (color: string) => {
+    const map: Record<string, string> = {
+      rose: 'bg-rose-500/5',
+      blue: 'bg-blue-500/5',
+      amber: 'bg-amber-500/5',
+      emerald: 'bg-emerald-500/5'
+    };
+    return map[color] || 'bg-slate-500/5';
+  };
 
   return (
     <motion.div 
@@ -202,7 +223,7 @@ export default function PatientOverview() {
           >
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-8">
-                <div className={`p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500`}>
+                <div className={`p-4 rounded-2xl ${getStatColors(stat.color)} group-hover:scale-110 transition-transform duration-500`}>
                   {stat.icon}
                 </div>
                 <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
@@ -226,7 +247,7 @@ export default function PatientOverview() {
                 <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">vs yesterday</span>
               </div>
             </div>
-            <div className={`absolute -right-4 -bottom-4 w-24 h-24 bg-${stat.color}-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700`} />
+            <div className={`absolute -right-4 -bottom-4 w-24 h-24 ${getStatBlur(stat.color)} rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700`} />
           </motion.div>
         ))}
       </div>
@@ -511,9 +532,11 @@ export default function PatientOverview() {
                     <Calendar className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-sm font-black text-slate-900">{apt.doctor?.name || 'Practitioner'}</div>
+                    <div className="text-sm font-black text-slate-900">{apt.doctor?.name || apt.doctor_name || 'Practitioner'}</div>
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{apt.doctor?.specialty || 'Healthcare'}</div>
-                    <div className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{new Date(apt.appointment_date).toLocaleDateString()}</div>
+                    <div className="text-[10px] text-blue-600 font-black uppercase tracking-widest">
+                      {apt.appointment_date && !isNaN(new Date(apt.appointment_date).getTime()) ? new Date(apt.appointment_date).toLocaleDateString() : 'No date'}
+                    </div>
                   </div>
                 </div>
               )) : (

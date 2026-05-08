@@ -162,44 +162,19 @@ export default function DoctorAIChat() {
 
   const [clinicalContext, setClinicalContext] = useState<any[]>([]);
   const { user } = useSelector((state: RootState) => state.auth);
+  const { appointments } = useSelector((state: RootState) => state.health);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchClinicalContext();
-    }
-  }, [user?.id]);
-
-  const fetchClinicalContext = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          patient:users!patient_id(id, name)
-        `)
-        .eq('doctor_id', user?.id)
-        .limit(5);
-      
-      if (error) throw error;
-      
-      const patientMap = new Map();
-      (data as any[])?.forEach(a => {
-        if (a.patient) {
-          patientMap.set(a.patient.id, a.patient);
-        }
-      });
-      const uniquePatients = Array.from(patientMap.values()) as { id: string; name: string }[];
-      const context = uniquePatients.map((p) => ({
-        id: p.id,
-        name: p.name,
-        condition: ['Hypertension', 'Diabetes Type 2', 'Post-Op Recovery', 'General Checkup'][Math.floor(Math.random() * 4)],
-        priority: ['High', 'Normal', 'Critical'][Math.floor(Math.random() * 3)]
+    if (appointments.length > 0) {
+      const activeContext = appointments.slice(0, 5).map(a => ({
+        id: a.patient_id,
+        name: a.patient?.name || 'Anonymous',
+        condition: a.reason || 'General Follow-up',
+        priority: a.priority || 'Normal'
       }));
-      
-      setClinicalContext(context);
-    } catch (error) {
-      console.error('Error fetching clinical context:', error);
+      setClinicalContext(activeContext);
     }
-  };
+  }, [appointments]);
 
   const quickActions = [
     { label: 'Summarize Schedule', icon: <Calendar className="w-4 h-4" />, prompt: 'Analyze my schedule for today and suggest optimizations.' },

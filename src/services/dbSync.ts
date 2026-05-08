@@ -7,11 +7,15 @@ import {
   setNotifications,
   addNotification,
   setPrescriptions,
+  setAdherenceLogs,
+  addAdherenceLog,
   updateBiometrics,
   setTasks,
   addTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  setDiagnostics,
+  addDiagnostic
 } from '../store/healthSlice';
 import { AppDispatch } from '../store';
 import { toast } from 'sonner';
@@ -84,15 +88,29 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
     if (!error && data) {
       dispatch(setPrescriptions(data.map(p => ({
         id: p.id,
-        name: p.medication,
+        medication: p.medication,
         dosage: p.dosage,
         frequency: p.frequency,
-        remaining: 10, // Mocking these for now but they should be in DB
-        total: 10,
-        doctor: p.doctor_id,
+        doctor_id: p.doctor_id,
+        patient_id: p.patient_id,
         status: (p.status || 'Active') as any,
-        category: 'Medication'
+        adherence_rate: p.adherence_rate || 100,
+        last_dose_taken: p.last_dose_taken,
+        created_at: p.created_at
       }))));
+    }
+  };
+
+  // 8. Fetch & Sync Adherence Logs
+  const syncAdherence = async () => {
+    const { data, error } = await supabase
+      .from('medication_adherence')
+      .select('*')
+      .eq('patient_id', userId)
+      .order('taken_at', { ascending: false });
+    
+    if (!error && data) {
+      dispatch(setAdherenceLogs(data));
     }
   };
 
@@ -102,11 +120,11 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
       .from('user_biometrics')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     if (!error && data) {
       dispatch(updateBiometrics({
-        heartRate: [], // We'd need a separate history table for the chart
+        heartRate: data.heart_rate ? [{ time: 'Recent', value: parseInt(data.heart_rate) || 72 }] : [],
         bloodPressure: data.blood_pressure,
         bloodSugar: data.glucose,
         oxygen: data.oxygen,
@@ -115,7 +133,20 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
     }
   };
 
-  // 6. Fetch & Sync Tasks
+  // 6. Fetch & Sync Diagnostics
+  const syncDiagnostics = async () => {
+    const { data, error } = await supabase
+      .from('diagnostics')
+      .select('*')
+      .eq(isDoctor ? 'doctor_id' : 'patient_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      dispatch(setDiagnostics(data));
+    }
+  };
+
+  // 7. Fetch & Sync Tasks
   const syncTasks = async () => {
     const { data, error } = await supabase
       .from('clinical_tasks')
@@ -204,6 +235,62 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
     }
   });
 
+  const biometricChannel = subscribeToChannel('biometrics-channel', 'user_biometrics', (payload) => {
+    if (payload.new && payload.new.user_id === userId) {
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      dispatch(updateBiometrics({
+        heartRate: payload.new.heart_rate ? [{ time: timeStr, value: parseInt(payload.new.heart_rate) || 72 }] : [],
+        bloodPressure: payload.new.blood_pressure,
+        bloodSugar: payload.new.glucose,
+        oxygen: payload.new.oxygen,
+        lastUpdated: payload.new.last_updated
+      }));
+    }
+  });
+
+  const prescriptionChannel = subscribeToChannel('prescriptions-channel', 'prescriptions', (payload) => {
+    const isTarget = isDoctor ? payload.new?.doctor_id === userId : payload.new?.patient_id === userId;
+    if (payload.new && isTarget) {
+      syncPrescriptions();
+      if (payload.eventType === 'INSERT' && !isDoctor) {
+        toast.info("New Prescription Added", {
+          description: `Your practitioner has added ${payload.new.medication} to your regimen.`
+        });
+      }
+    }
+  });
+
+  const diagnosticChannel = subscribeToChannel('diagnostics-channel', 'diagnostics', (payload) => {
+    const isTarget = isDoctor ? payload.new?.doctor_id === userId : payload.new?.patient_id === userId;
+    if (payload.new && isTarget) {
+      if (payload.eventType === 'INSERT') {
+        dispatch(addDiagnostic(payload.new));
+        if (!isDoctor) {
+          toast.success("New Diagnostic Entry", {
+            description: `A new ${payload.new.type} record is ready for review.`
+          });
+        }
+      } else {
+        syncDiagnostics();
+      }
+    }
+  });
+
+  const adherenceChannel = subscribeToChannel('adherence-channel', 'medication_adherence', (payload: any) => {
+    if (payload.new && (payload.new.patient_id === userId || isDoctor)) {
+      syncAdherence();
+      syncPrescriptions();
+      
+      if (payload.eventType === 'INSERT' && isDoctor) {
+        toast.info("Patient Adherence Update", {
+          description: "A patient has logged their medication dose."
+        });
+      }
+    }
+  });
+
   // Initial fetch
   syncPractitioners();
   syncAppointments();
@@ -211,12 +298,18 @@ export const initializeRealTimeSync = (dispatch: AppDispatch, userId: string, ro
   syncPrescriptions();
   syncBiometrics();
   syncTasks();
+  syncDiagnostics();
+  syncAdherence();
 
   return () => {
     supabase.removeChannel(msgChannel);
     supabase.removeChannel(aptChannel);
     supabase.removeChannel(notifChannel);
     supabase.removeChannel(taskChannel);
+    supabase.removeChannel(biometricChannel);
+    supabase.removeChannel(prescriptionChannel);
+    supabase.removeChannel(diagnosticChannel);
+    supabase.removeChannel(adherenceChannel);
   };
 };
 

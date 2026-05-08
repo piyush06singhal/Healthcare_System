@@ -26,78 +26,65 @@ export default function PatientAppointments() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
-  const [bookingData, setBookingData] = useState({ doctorId: 'd1', reason: '', date: '' });
+  const [bookingData, setBookingData] = useState({ doctorId: 'staff-01', reason: '', date: '' });
   
   const { user } = useSelector((state: RootState) => state.auth);
-  const { appointments: reduxAppointments, practitioners } = useSelector((state: RootState) => state.health);
+  const { practitioners } = useSelector((state: RootState) => state.health);
   const dispatch = useDispatch();
-
   const [dbAppointments, setDbAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchAppointments();
-    }
-  }, [user?.id]);
+    if (!user) return;
 
-  const fetchAppointments = async () => {
-    if (!user?.id) return;
-    try {
-      setLoading(true);
+    const fetchAppointments = async () => {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('patient_id', user.id);
+        .eq('patient_id', user.id)
+        .order('appointment_date', { ascending: true });
       
-      if (error) {
-        console.error('Patient Supabase Fetch Error:', error);
-        throw error;
+      if (!error && data) {
+        setDbAppointments(data);
       }
-      
-      const sorted = (data || []).sort((a, b) => {
-        const tA = new Date(`${a.date || a.appointment_date} ${a.time || '00:00'}`).getTime();
-        const tB = new Date(`${b.date || b.appointment_date} ${b.time || '00:00'}`).getTime();
-        return tA - tB;
-      });
-
-      setDbAppointments(sorted);
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      toast.error('Failed to sync patient schedule');
-    } finally {
       setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (user?.id) {
-        fetchAppointments();
-        const channel = supabase
-            .channel(`patient-appointments-${user.id}`)
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'appointments',
-                filter: `patient_id=eq.${user.id}`
-            }, () => {
-                fetchAppointments();
-            })
-            .subscribe();
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }
-  }, [user?.id]);
+    fetchAppointments();
 
-  const allAppointments = dbAppointments;
+    const channel = supabase
+      .channel('appointments_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'appointments',
+        filter: `patient_id=eq.${user.id}`
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setDbAppointments(prev => [...prev, payload.new].sort((a, b) => {
+            const timeA = a.appointment_date ? new Date(a.appointment_date).getTime() : 0;
+            const timeB = b.appointment_date ? new Date(b.appointment_date).getTime() : 0;
+            const dateA = isNaN(timeA) ? 0 : timeA;
+            const dateB = isNaN(timeB) ? 0 : timeB;
+            return dateA - dateB;
+          }));
+        } else if (payload.eventType === 'DELETE') {
+          setDbAppointments(prev => prev.filter(a => a.id !== payload.old.id));
+        } else if (payload.eventType === 'UPDATE') {
+          setDbAppointments(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const filteredAppointments = useMemo(() => {
-    return allAppointments.filter(apt => 
+    return dbAppointments.filter(apt => 
       apt.doctor_name?.toLowerCase().includes(search.toLowerCase()) || 
       apt.reason?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [allAppointments, search]);
+  }, [dbAppointments, search]);
 
   const handleBook = async () => {
     if (!bookingData.reason || !bookingData.date) {
@@ -107,28 +94,60 @@ export default function PatientAppointments() {
 
     const doctor = practitioners.find(p => p.id === bookingData.doctorId) || { id: 'staff-01', name: 'Dr. Sarah Mitchell' };
     const bookingDate = new Date(bookingData.date);
+    if (isNaN(bookingDate.getTime())) {
+      toast.error('Invalid date selection. Please re-schedule.');
+      return;
+    }
     
     try {
-      const { error } = await supabase.from('appointments').insert([{
-        patient_id: user?.id,
-        doctor_id: doctor.id,
-        patient_name: user?.name,
-        doctor_name: doctor.name,
-        date: format(bookingDate, 'yyyy-MM-dd'),
-        time: format(bookingDate, 'HH:mm'),
+      if (!user) {
+        toast.error('Identity sync required. Please sign in again.');
+        return;
+      }
+
+      console.log("Attempting booking for user:", user.id);
+
+      const { data, error } = await supabase.from('appointments').insert([{
+        patient_id: user.id,
+        doctor_id: doctor.id || 'staff-01',
+        patient_name: user.name || 'MediFlow Patient',
+        doctor_name: doctor.name || 'Clinical Staff',
+        appointment_date: bookingDate.toISOString(),
+        date: bookingDate ? format(bookingDate, 'yyyy-MM-dd') : null,
+        time: bookingDate ? format(bookingDate, 'HH:mm') : null,
         type: 'Video',
         status: 'pending',
         reason: bookingData.reason
-      }]);
+      }]).select();
 
-      if (error) throw error;
+      if (error) {
+        console.warn("Primary insertion attempt failed, trying fallback...", error);
+        
+        // Fallback: Try without 'date' and 'time' columns if they are missing in DB
+        if (error.message?.includes("column \"date\"") || error.message?.includes("column \"time\"") || error.hint?.includes("schema cache")) {
+           const { error: fallbackError } = await supabase.from('appointments').insert([{
+            patient_id: user.id,
+            doctor_id: doctor.id || 'staff-01',
+            patient_name: user.name || 'MediFlow Patient',
+            doctor_name: doctor.name || 'Clinical Staff',
+            appointment_date: bookingDate.toISOString(),
+            type: 'Video',
+            status: 'pending',
+            reason: bookingData.reason
+          }]);
+          
+          if (fallbackError) throw fallbackError;
+        } else {
+          throw error;
+        }
+      }
       
       toast.success(`Sequential slot reserved with ${doctor.name}. Clinical confirmation pending.`);
       setIsBookModalOpen(false);
-      setBookingData({ doctorId: 'd1', reason: '', date: '' });
-    } catch (error) {
-      console.error("Booking error:", error);
-      toast.error("Failed to commit reservation to cloud.");
+      setBookingData({ doctorId: 'staff-01', reason: '', date: '' });
+    } catch (error: any) {
+      console.error("Booking error fallback:", error);
+      toast.error(error.message || "Failed to commit reservation to cloud.");
     }
   };
 
@@ -229,13 +248,20 @@ export default function PatientAppointments() {
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <div className="text-xs font-bold text-slate-600">
-                    {format(new Date(apt.date), 'EEEE, MMM d, yyyy')}
+                    {(() => {
+                      try {
+                        const d = apt.appointment_date || apt.date;
+                        return d ? format(new Date(d), 'EEEE, MMM d, yyyy') : 'No date set';
+                      } catch (e) {
+                        return 'Invalid date';
+                      }
+                    })()}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <Clock className="w-5 h-5 text-indigo-600" />
                   <div className="text-xs font-bold text-slate-600">
-                    {apt.time}
+                    {apt.time || (apt.appointment_date && !isNaN(new Date(apt.appointment_date).getTime()) ? format(new Date(apt.appointment_date), 'HH:mm') : '--:--')}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 px-2 py-1">

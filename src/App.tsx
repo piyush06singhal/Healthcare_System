@@ -46,11 +46,8 @@ const DoctorSchedule = lazy(() => import('./pages/DoctorSchedule'));
 const DoctorPatients = lazy(() => import('./pages/DoctorPatients'));
 const DoctorInsights = lazy(() => import('./pages/DoctorInsights'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const SymptomPredictor = lazy(() => import('./pages/SymptomPredictor'));
 const Profile = lazy(() => import('./pages/Profile'));
 const HealthCalculators = lazy(() => import('./pages/HealthCalculators'));
-const MedicalRecords = lazy(() => import('./pages/MedicalRecords'));
-const MedicalInsights = lazy(() => import('./pages/MedicalInsights'));
 const VideoGeneration = lazy(() => import('./pages/VideoGeneration'));
 const DoctorAIChat = lazy(() => import('./pages/DoctorAIChat'));
 const DoctorAIWorkbench = lazy(() => import('./pages/DoctorAIWorkbench'));
@@ -93,7 +90,25 @@ const ProfileInitializer = () => {
         .eq('id', user.id)
         .single();
       
-      if (data && !error) {
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        console.log("Initializing new public profile for user:", user.id);
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert([{ 
+            id: user.id, 
+            email: user.email, 
+            name: user.name || user.email?.split('@')[0] || 'MediFlow User',
+            role: 'patient',
+            status: 'Active'
+          }])
+          .select()
+          .single();
+        
+        if (newUser && !createError) {
+          dispatch(setUser(newUser));
+        }
+      } else if (data && !error) {
         dispatch(setUser(data));
       }
     };

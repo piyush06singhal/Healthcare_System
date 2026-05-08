@@ -316,7 +316,7 @@ export default function PatientMessages() {
                           </div>
                           <div className="flex items-center gap-2 px-2">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {msg.created_at && !isNaN(new Date(msg.created_at).getTime()) ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                             </span>
                             {msg.sender_id === user?.id && <CheckCheck className="w-3 h-3 text-blue-500" />}
                           </div>

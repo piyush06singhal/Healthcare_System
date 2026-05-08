@@ -37,7 +37,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     title: n.title,
     message: n.message,
     type: n.type === 'alert' ? 'urgent' : n.type as any || 'info',
-    time: new Date(n.timestamp).toLocaleTimeString(),
+    time: n.timestamp && !isNaN(new Date(n.timestamp).getTime()) ? new Date(n.timestamp).toLocaleTimeString() : 'N/A',
     isRead: n.read
   }));
 

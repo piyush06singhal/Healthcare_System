@@ -55,9 +55,18 @@ export default function DoctorAppointments() {
 
       // Manual sorting if the column doesn't exist yet but the query succeeded (unexpectedly)
       const sortedData = (data || []).sort((a, b) => {
-        const timeA = new Date(`${a.date || a.appointment_date} ${a.time || '00:00'}`).getTime();
-        const timeB = new Date(`${b.date || b.appointment_date} ${b.time || '00:00'}`).getTime();
-        return timeA - timeB;
+        const dateAStr = a.date || a.appointment_date;
+        const dateBStr = b.date || b.appointment_date;
+        if (!dateAStr || !dateBStr) return 0;
+        
+        try {
+          const timeA = new Date(`${dateAStr} ${a.time || '00:00'}`).getTime();
+          const timeB = new Date(`${dateBStr} ${b.time || '00:00'}`).getTime();
+          if (isNaN(timeA) || isNaN(timeB)) return 0;
+          return timeA - timeB;
+        } catch (e) {
+          return 0;
+        }
       });
 
       setAppointments(sortedData);
@@ -123,11 +132,18 @@ export default function DoctorAppointments() {
 
     result.sort((a, b) => {
       if (sortBy === 'time') {
-        const dateAStr = a.appointment_date || `${a.date} ${a.time}`;
-        const dateBStr = b.appointment_date || `${b.date} ${b.time}`;
-        const dateA = new Date(dateAStr).getTime();
-        const dateB = new Date(dateBStr).getTime();
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        const dateAStr = a.appointment_date || (a.date && a.time ? `${a.date} ${a.time}` : null);
+        const dateBStr = b.appointment_date || (b.date && b.time ? `${b.date} ${b.time}` : null);
+        if (!dateAStr || !dateBStr) return 0;
+        
+        try {
+          const dateA = new Date(dateAStr).getTime();
+          const dateB = new Date(dateBStr).getTime();
+          if (isNaN(dateA) || isNaN(dateB)) return 0;
+          return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        } catch (e) {
+          return 0;
+        }
       }
       if (sortBy === 'name') {
         const nameA = a.patient_name || 'Unknown Patient';
@@ -260,7 +276,11 @@ export default function DoctorAppointments() {
                       </span>
                       <span className="flex items-center gap-2.5">
                         <Calendar className="w-4 h-4 text-indigo-600" />
-                        {format(new Date(apt.date), 'MMM d, yyyy')}
+                        {apt.appointment_date || apt.date ? (
+                          !isNaN(new Date(apt.appointment_date || apt.date).getTime()) 
+                            ? format(new Date(apt.appointment_date || apt.date), 'MMM d, yyyy') 
+                            : 'Invalid Date'
+                        ) : 'N/A'}
                       </span>
                     </div>
                   </div>

@@ -87,26 +87,45 @@ async function startServer() {
   app.post("/api/ai/chat", async (req, res) => {
     const { messages, role, clinicalContext } = req.body;
     
-    // Resolve keys inside handler to ensure they capture latest process.env state
+    // Neural Core v7.2 - High Integrity API Key Resolution
     const groqKey = (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "").trim();
     const geminiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "").trim();
     
-    if (!groqKey && !geminiKey) {
-      console.error("[MediFlow] Missing AI Keys. Groq and Gemini are both empty.");
-      return res.status(500).json({ error: "AI diagnostics offline. Please add GROQ_API_KEY in the Settings menu." });
+    if (!groqKey || groqKey.length < 10) {
+      console.error("[MediFlow Neural Core] Neural Link Disrupted: Valid Groq key missing.");
+      return res.status(500).json({ error: "AI Core link disrupted. Please verify credentials." });
     }
 
-    const systemPrompt = `You are the MediFlow Advanced Clinical Assistant (v5.0), the primary intelligence layer of the MediFlow Medical Operating System (MOS). 
-MediFlow is a next-generation healthcare platform developed by Piyush Singhal.
+    const doctorInstructions = `
+You are the MediFlow Clinical Intelligence Engine (M-CIE) v7.2. Your purpose is to provide high-fidelity, evidence-based diagnostic support.
+MediFlow MOS Architecture Context:
+- Precision Integration: Real-time sync nodes active (Heart Rate, SpO2, BP, Glucose).
+- Clinical Workflow: prioritize differentials with confidence scores (0-100%).
+- Tone: Professional, precise, strictly medical clinical language.
+- Project Identity: MediFlow AI is developed by Piyush Singhal.
+`;
 
-MISSION: Provide expert-level clinical decision support (CDS) with human-centric empathy.
-USER PERSONA: ${role === 'doctor' ? 'Clinical Specialist' : 'Patient'}.
-CONTEXT: ${clinicalContext || 'Standard clinical environment.'}
+    const patientInstructions = `
+You are the MediFlow Patient Wellness Guardian. You empower patients with health literacy.
+MediFlow Ecosystem Principles:
+- Accessibility: Explain biometrics and results in warm, plain language.
+- Engagement: Motivate adherence to treatments.
+- Safety: If vitals are abnormal, instruct them to contact emergency services.
+- Tone: Supportive, clear, and reassuring. Always include the AI disclaimer.
+- Project Identity: MediFlow AI is developed by Piyush Singhal.
+`;
 
-Safety: Always provide clinical disclaimers. For emergencies, contact local EMS.`;
+    const systemPrompt = `SYSTEM: MediFlow Neural Core (v7.2) | Deployment: Clinical OS.
+ROLE: ${role === 'doctor' ? 'Clinical Decision Support' : 'Patient Companion'}.
 
-    // Attempt Groq Primary (Preferring Llama 3 70B for clinical depth)
-    if (groqKey && groqKey !== 'DUMMY_KEY') {
+${role === 'doctor' ? doctorInstructions : patientInstructions}
+
+Real-time Context: ${clinicalContext || 'Standard MediFlow Dashboard.'}
+
+MANDATORY DISCLAIMER: "MediFlow AI is for educational support. Final clinical decisions must be made by human practitioners."`;
+
+    // Attempt Groq (Llama 3.3 70B - Primary)
+    if (groqKey && (groqKey.length > 20)) {
       try {
         const { Groq } = await import("groq-sdk");
         const groq = new Groq({ apiKey: groqKey });
@@ -120,15 +139,16 @@ Safety: Always provide clinical disclaimers. For emergencies, contact local EMS.
             }))
           ],
           model: "llama-3.3-70b-versatile",
-          temperature: 0.5,
+          temperature: 0.4,
+          max_tokens: 1024,
         });
 
-        console.log("Chat: GROQ [Primary]");
+        console.log(`[MediFlow] GROQ Neural Link Active (${role})`);
         return res.json({ reply: chatCompletion.choices[0].message.content });
       } catch (err: any) {
-        console.error("GROQ Chat Error:", err.message);
+        console.error("[MediFlow] GROQ Neural Link Error:", err.message);
         if (!geminiKey) {
-          return res.status(500).json({ error: `Groq failed: ${err.message}` });
+          return res.status(500).json({ error: `Neural Link Error: ${err.message}` });
         }
       }
     }
@@ -171,63 +191,69 @@ Safety: Always provide clinical disclaimers. For emergencies, contact local EMS.
     const groqKey = (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "").trim();
     const geminiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "").trim();
 
-    // PRIMARY: Attempt Groq Vision
-    if (groqKey && (groqKey.startsWith("gsk_") || groqKey.length > 20)) {
+    if (!groqKey || groqKey.length < 10) {
+      console.error("[MediFlow Neural Core] Neural Link Disrupted: Valid Groq key missing for Vision.");
+      return res.status(500).json({ error: "AI Vision Core link disrupted. Please verify credentials." });
+    }
+
+    // PRIMARY: Attempt Groq Vision (High Speed + Precision)
+    if (groqKey && groqKey.length > 20) {
       try {
         const { Groq } = await import("groq-sdk");
         const groq = new Groq({ apiKey: groqKey });
+        
         const completion = await groq.chat.completions.create({
           messages: [
             {
               role: "user",
               content: [
-                { type: "text", text: prompt || "Analyze this medical image for clinical findings. Return JSON with keys: findings, differentialDiagnosis, recommendations, anatomicalAssessment, severity, confidence." },
+                { 
+                  type: "text", 
+                  text: prompt || "You are the MediFlow Diagnostic Vision System. Analyze this medical image (X-ray/MRI/Lab) and provide: 1. Primary Findings, 2. Anatomical Assessment, 3. Clinical Impression, 4. Differential Diagnosis, 5. Confidence Score. Return the output in a structured JSON format." 
+                },
                 { type: "image_url", image_url: { url: image } }
               ],
             },
           ],
           model: "llama-3.2-11b-vision-preview",
+          temperature: 0.2,
+          max_tokens: 1024,
         });
-        console.log("Vision: GROQ [Primary]");
+
+        console.log(`[MediFlow] GROQ Vision Analysis Active`);
         return res.json({ result: completion.choices[0].message.content });
       } catch (err: any) {
-        console.error("GROQ Vision error:", err.message);
+        console.error("[MediFlow] GROQ Vision Error:", err.message);
       }
     }
 
-    // FALLBACK: Gemini Vision
+    // FALLBACK: Gemini 2.0 Flash Vision (Unmatched Multi-modal Precision)
     if (geminiKey && geminiKey.length > 20) {
       try {
-        const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({ apiKey: geminiKey });
-        const response = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
-          contents: [
-            {
-              parts: [
-                { text: prompt || "Analyze this medical image for clinical findings. Return JSON with keys: findings, differentialDiagnosis, recommendations, anatomicalAssessment, severity, confidence." },
-                {
-                  inlineData: {
-                    data: image.includes(',') ? image.split(',')[1] : image,
-                    mimeType: image.match(/:(.*?);/)?.[1] || "image/jpeg"
-                  }
-                }
-              ]
-            }
-          ],
-          config: {
-            responseMimeType: "application/json",
-          }
-        });
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        console.log("Vision: GEMINI [Fallback]");
-        return res.json({ result: response.text });
+        const imagePart = {
+          inlineData: {
+            data: image.includes(",") ? image.split(",")[1] : image,
+            mimeType: image.match(/:(.*?);/)?.[1] || "image/jpeg",
+          },
+        };
+
+        const result = await model.generateContent([
+          prompt || "Perform an advanced clinical analysis of this image. Return structured JSON with keys: findings, differentialDiagnosis, anatomicFocus, severity, confidence.",
+          imagePart,
+        ]);
+
+        console.log(`[MediFlow] GEMINI Vision Analysis Active (Fallback)`);
+        return res.json({ result: result.response.text() });
       } catch (error: any) {
-        console.error("Gemini Vision error:", error.message);
+        console.error("[MediFlow] Gemini Vision Core Error:", error.message);
       }
     }
 
-    res.status(500).json({ error: "MediFlow AI Vision is offline. Check Groq API Key format." });
+    res.status(500).json({ error: "MediFlow Neural Vision core currently offline. Please verify API configuration." });
   });
 
   app.post("/api/ai/search", async (req, res) => {
@@ -260,7 +286,7 @@ Safety: Always provide clinical disclaimers. For emergencies, contact local EMS.
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({ apiKey: geminiKey });
         const result = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
+          model: "gemini-2.0-flash",
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
@@ -279,88 +305,132 @@ Safety: Always provide clinical disclaimers. For emergencies, contact local EMS.
     const groqKey = (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "").trim();
     const geminiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "").trim();
 
-    // High-fidelity Clinical Library (V5.5 - Premium Assets)
+    // Enhanced High-fidelity Clinical Asset Library (v7.2 - Diverse Cinematic Nodes)
     const assetLibrary = [
       { 
-        tags: ["heart", "cardio", "blood", "anatomy", "ventricle"], 
+        id: "cardiac",
+        tags: ["heart", "cardio", "blood", "anatomy", "ventricle", "chest", "circulation"], 
         url: "https://videos.pexels.com/video-files/3191572/3191572-uhd_3840_2160_25fps.mp4", 
         audioUrl: "https://www.soundjay.com/heartbeat/heartbeat-04.mp3",
-        description: "Anatomical Cardiac Flow Analysis"
+        baseDescription: "High-Resolution Cardiac Flow Dynamics"
       },
       { 
-        tags: ["brain", "neuro", "thinking", "synapse", "mind"], 
+        id: "neural",
+        tags: ["brain", "neuro", "thinking", "synapse", "mind", "head", "nerve", "cognitive"], 
         url: "https://videos.pexels.com/video-files/4488344/4488344-uhd_3840_2160_25fps.mp4", 
         audioUrl: "https://www.soundjay.com/ambient/ambient-neural-pulse.mp3",
-        description: "Neural Transmission Visualization"
+        baseDescription: "Advanced Synaptic Transmission Analysis"
       },
       { 
-        tags: ["virus", "bacteria", "covid", "microscope", "cell"], 
+        id: "micro",
+        tags: ["virus", "bacteria", "covid", "microscope", "cell", "pathogen", "infection", "immune"], 
         url: "https://videos.pexels.com/video-files/3959556/3959556-uhd_3840_2160_25fps.mp4", 
         audioUrl: "https://www.soundjay.com/ambient/lab-ambient-01.mp3",
-        description: "Pathographic Signal Mapping"
+        baseDescription: "Microscopic Pathological Vector Mapping"
       },
       { 
-        tags: ["dna", "gene", "science", "genome", "helix"], 
-        url: "https://videos.pexels.com/video-files/3191572/3191572-uhd_3840_2160_25fps.mp4", 
+        id: "genetics",
+        tags: ["dna", "gene", "science", "genome", "helix", "molecular", "rna"], 
+        url: "https://videos.pexels.com/video-files/4011153/4011153-uhd_3840_2160_30fps.mp4", 
         audioUrl: "https://www.soundjay.com/ambient/science-lab-1.mp3",
-        description: "Genomic Sequencing Array"
+        baseDescription: "Genomic Sequencing & Molecular Helix Array"
       },
       { 
-        tags: ["lung", "breath", "oxygen", "respiratory", "bronchial"], 
-        url: "https://videos.pexels.com/video-files/4488344/4488344-uhd_3840_2160_25fps.mp4", 
+        id: "respiratory",
+        tags: ["lung", "breath", "oxygen", "respiratory", "bronchial", "alveoli", "asthma"], 
+        url: "https://videos.pexels.com/video-files/4488661/4488661-uhd_3840_2160_25fps.mp4", 
         audioUrl: "https://www.soundjay.com/ambient/breath-pattern-1.mp3",
-        description: "Respiratory Expansion Interface"
+        baseDescription: "High-Fidelity Respiratory Expansion Synthesis"
+      },
+      {
+        id: "surgery",
+        tags: ["surgery", "operation", "surgeon", "hospital", "theatre", "medical procedure", "surgical"],
+        url: "https://videos.pexels.com/video-files/4489370/4489370-uhd_3840_2160_25fps.mp4",
+        audioUrl: "https://www.soundjay.com/ambient/hospital-ambience-1.mp3",
+        baseDescription: "Precision Surgical Intervention Protocol"
+      },
+      {
+        id: "radiology",
+        tags: ["xray", "mri", "ct scan", "radiology", "imaging", "diagnostic", "bone", "scan"],
+        url: "https://videos.pexels.com/video-files/4482599/4482599-uhd_3840_2160_25fps.mp4",
+        audioUrl: "https://www.soundjay.com/ambient/computer-processing-1.mp3",
+        baseDescription: "Diagnostic Radiological Reconstruction"
       }
     ];
 
     try {
-      console.log(`[MediFlow Neural Synth] Requesting synthesis for: ${prompt}`);
-      let selectedAsset = assetLibrary[0]; // Default to Heart
-      
+      console.log(`[MediFlow Neural Synth] Initializing synthesis for: ${prompt}`);
+      let selectedAsset = assetLibrary[0]; 
       const lowerPrompt = prompt.toLowerCase();
 
-      // SMART SELECTION via GROQ
-      if (groqKey && (groqKey.startsWith("gsk_") || groqKey.length > 20)) {
+      // PART 1: AI SELECTION & ENRICHMENT via GROQ
+      if (groqKey && groqKey.length > 20) {
         try {
           const { Groq } = await import("groq-sdk");
           const groq = new Groq({ apiKey: groqKey });
-          const decision = await groq.chat.completions.create({
+          
+          const classification = await groq.chat.completions.create({
             messages: [{ 
-              role: "user", 
-              content: `Classify this prompt: "${prompt}". Match it to the best index from: 0-Heart, 1-Brain, 2-Microbiology, 3-Genetics, 4-Respiratory. Return ONLY the number.` 
+              role: "system", 
+              content: "You are the MediFlow Neural Dispatcher. Link the prompt to the best asset ID: cardiac, neural, micro, genetics, respiratory, surgery, radiology. Return ONLY the ID (no quotes, no periods)." 
+            }, {
+              role: "user",
+              content: prompt
             }],
-            model: "llama-3-8b-8192"
+            model: "llama-3.3-70b-versatile",
+            temperature: 0
           });
-          const idx = parseInt(decision.choices[0].message.content?.trim() || "0");
-          if (!isNaN(idx) && assetLibrary[idx]) {
-            selectedAsset = assetLibrary[idx];
-            console.log(`[MediFlow Synth] Groq classified index: ${idx}`);
+
+          const matchedId = classification.choices[0].message.content?.trim().toLowerCase().replace(/[^a-z]/g, '');
+          const found = assetLibrary.find(a => a.id === matchedId);
+          if (found) {
+            selectedAsset = found;
+            console.log(`[MediFlow Neural Synth] Groq matched asset: ${matchedId}`);
           }
         } catch (e) {
-          console.warn("[MediFlow Synth] Decision engine fail, using fallback logic.");
-          // Fallback to keyword match
-          const found = assetLibrary.find(a => a.tags.some(t => lowerPrompt.includes(t)));
-          if (found) selectedAsset = found;
+          console.warn("[MediFlow Neural Synth] Groq selection failed, using keyword fallback.");
+          const keywordMatch = assetLibrary.find(a => a.tags.some(t => lowerPrompt.includes(t)));
+          if (keywordMatch) selectedAsset = keywordMatch;
         }
-      } else {
-        // Simple keyword match if no Groq
-        const found = assetLibrary.find(a => a.tags.some(t => lowerPrompt.includes(t)));
-        if (found) selectedAsset = found;
       }
 
-      // VEO 3.1 Neural Sync Delay (Artificial for UX immersion)
-      await new Promise(resolve => setTimeout(resolve, 3800));
+      // PART 2: DYNAMIC NARRATIVE GENERATION via GEMINI (The "Deep Insight" layer)
+      let customDescription = selectedAsset.baseDescription;
+      if (geminiKey && geminiKey.length > 20) {
+        try {
+          const { GoogleGenerativeAI } = await import("@google/generative-ai");
+          const genAI = new GoogleGenerativeAI(geminiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+          
+          const scriptGen = await model.generateContent(`
+            You are the MediFlow Clinical Scriptwriter. 
+            Prompt: "${prompt}"
+            Asset Category: "${selectedAsset.id}"
+            
+            Generate a high-fidelity clinical description (max 20 words) for this video. 
+            Focus on technical medical terminology and anatomical accuracy.
+          `);
+          
+          customDescription = scriptGen.response.text().trim();
+          console.log(`[MediFlow Neural Synth] Gemini generated narrative: ${customDescription}`);
+        } catch (e) {
+          console.error("[MediFlow Neural Synth] Gemini narrative failure:", e);
+        }
+      }
+
+      // VEO 3.1 Neural Sync Delay (High-performance simulation)
+      await new Promise(resolve => setTimeout(resolve, 4500));
       
       res.json({ 
         success: true, 
         videoUrl: selectedAsset.url,
         audioUrl: selectedAsset.audioUrl,
-        description: selectedAsset.description,
-        status: "Clinical training video synthesized via MediFlow Neural Engine v5.5 [Veo 3.1 Integrated]." 
+        description: customDescription,
+        status: `Clinical synthesis complete. Neural Core (v6.0) has matched your prompt with high-fidelity visualization and spatial sound synchronization.` 
       });
     } catch (error) {
-      console.error("MediFlow Synth Error:", error);
-      res.status(500).json({ error: "Internal Neural Link Failure." });
+      console.error("MediFlow Neural Synth Critical Failure:", error);
+      res.status(500).json({ error: "Major Neural Link Disruption during synthesis." });
     }
   });
 
@@ -368,9 +438,14 @@ Safety: Always provide clinical disclaimers. For emergencies, contact local EMS.
   app.post("/api/contact", async (req, res) => {
     const { name, email, subject, message } = req.body;
     
-    const serviceId = process.env.EMAILJS_SERVICE_ID || "service_5smusmb";
-    const templateId = process.env.EMAILJS_TEMPLATE_ID || "template_owrzd6e";
-    const publicKey = process.env.EMAILJS_PUBLIC_KEY || "6chpD-awnqZPZdHgN";
+    const serviceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+    
+    if (!serviceId || !templateId || !publicKey) {
+      console.error("[MediFlow] Missing EmailJS Configuration.");
+      return res.status(500).json({ error: "Contact relay service not configured." });
+    }
     
     try {
       const response = await axios.post('https://api.emailjs.com/api/v1.0/email/send', {

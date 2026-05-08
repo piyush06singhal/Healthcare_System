@@ -29,13 +29,30 @@ import { RootState } from '../store';
 import { addMessage } from '../store/healthSlice';
 
 export default function PatientAIChat() {
-  const { messages } = useSelector((state: RootState) => state.health);
+  const { messages, biometrics, prescriptions, appointments } = useSelector((state: RootState) => state.health);
   const dispatch = useDispatch();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // High-fidelity health context for AI accuracy
+  const healthContext = useMemo(() => {
+    return `
+PATIENT CURRENT STATE:
+- Heart Rate: ${biometrics.heartRate[biometrics.heartRate.length - 1]?.value || '72'} BPM
+- Blood Pressure: ${biometrics.bloodPressure || '120/80'}
+- Oxygen: ${biometrics.oxygen || '98'}%
+- Glucose: ${biometrics.bloodSugar || '96'} mg/dL
+
+ACTIVE REGIMEN:
+${prescriptions.filter(p => p.status === 'active').map(p => `- ${p.medication}: ${p.dosage} (${p.frequency})`).join('\n') || 'No active medications.'}
+
+UPCOMING CARE:
+${appointments.filter(a => a.appointment_date && new Date(a.appointment_date) > new Date()).map(a => `- ${a.reason} on ${a.appointment_date && !isNaN(new Date(a.appointment_date).getTime()) ? new Date(a.appointment_date).toLocaleDateString() : 'N/A'}`).join('\n') || 'No upcoming appointments.'}
+    `.trim();
+  }, [biometrics, prescriptions, appointments]);
 
   const visibleMessages = useMemo(() => {
     return messages.slice(-visibleCount);
@@ -56,7 +73,7 @@ export default function PatientAIChat() {
     if (!isListening) {
       // Simulate speech recognition
       setTimeout(() => {
-        setInput('What are the symptoms of common cold?');
+        setInput('How do my recent heart rate readings look?');
         setIsListening(false);
       }, 2000);
     }
@@ -77,7 +94,7 @@ export default function PatientAIChat() {
     setLoading(true);
 
     try {
-      const response = await generateAIResponse(input, messages, 'patient');
+      const response = await generateAIResponse(input, messages, 'patient', healthContext);
       const assistantMessage = { 
         id: (Date.now() + 1).toString(),
         sender: 'doctor' as const, 
@@ -270,7 +287,11 @@ export default function PatientAIChat() {
                 <div key={i} className="p-5 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-lg transition-all cursor-pointer">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-lg bg-${vital.color}-100 text-${vital.color}-600`}>
+                      <div className={`p-1.5 rounded-lg ${
+                        vital.color === 'rose' ? 'bg-rose-100 text-rose-600' :
+                        vital.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                        'bg-emerald-100 text-emerald-600'
+                      }`}>
                         {vital.icon}
                       </div>
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{vital.label}</span>

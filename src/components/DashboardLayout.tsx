@@ -393,7 +393,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       </div>
                       <div className="min-w-0">
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                          {new Date(notif.timestamp).toLocaleTimeString()}
+                          {notif.timestamp && !isNaN(new Date(notif.timestamp).getTime()) ? new Date(notif.timestamp).toLocaleTimeString() : 'N/A'}
                         </div>
                         <h4 className="text-sm font-black text-slate-900 tracking-tight mb-1">{notif.title}</h4>
                         <p className="text-[11px] font-medium text-slate-500 leading-relaxed">{notif.message}</p>

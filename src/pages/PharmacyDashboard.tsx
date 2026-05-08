@@ -76,7 +76,7 @@ export default function PharmacyDashboard() {
 
             return {
                 ...p,
-                date: p.created_at ? format(new Date(p.created_at), 'yyyy-MM-dd') : 'N/A',
+                date: p.created_at && !isNaN(new Date(p.created_at).getTime()) ? format(new Date(p.created_at), 'yyyy-MM-dd') : 'N/A',
                 priority: p.status === 'pending' ? 'Urgent' : 'Normal',
                 patient: { name: patient?.name || 'External Patient' },
                 doctor: { name: doctor?.name || 'Clinical Staff' },
@@ -128,6 +128,15 @@ export default function PharmacyDashboard() {
     { label: 'Ready', count: prescriptions.filter(p => p.status === 'ready').length, icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, color: 'emerald' },
     { label: 'Total Today', count: prescriptions.length, icon: <ClipboardList className="w-5 h-5 text-slate-500" />, color: 'slate' },
   ];
+
+  const getStatBg = (color: string) => {
+    switch (color) {
+      case 'amber': return 'bg-amber-50';
+      case 'blue': return 'bg-blue-50';
+      case 'emerald': return 'bg-emerald-50';
+      default: return 'bg-slate-50';
+    }
+  };
 
   return (
     <motion.div 
@@ -191,7 +200,7 @@ export default function PharmacyDashboard() {
             transition={{ delay: i * 0.1 }}
             className="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center gap-4"
           >
-            <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-50 flex items-center justify-center shrink-0`}>
+            <div className={`w-12 h-12 rounded-2xl ${getStatBg(stat.color)} flex items-center justify-center shrink-0`}>
               {stat.icon}
             </div>
             <div>

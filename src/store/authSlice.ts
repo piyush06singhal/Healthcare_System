@@ -17,6 +17,9 @@ interface User {
   phone?: string;
   address?: string;
   bio?: string;
+  gender?: string;
+  blood_group?: string;
+  dob?: string;
   specialty?: string;
   education?: string;
   experience?: string;
@@ -59,8 +62,10 @@ const authSlice = createSlice({
       localStorage.setItem('user', JSON.stringify(action.payload.user));
     },
     setUser: (state, action: PayloadAction<User>) => {
-      state.user = { ...state.user, ...action.payload };
-      localStorage.setItem('user', JSON.stringify(state.user));
+      // Ensure we merge and keep strings consistent
+      const mergedUser = { ...state.user, ...action.payload };
+      state.user = mergedUser;
+      localStorage.setItem('user', JSON.stringify(mergedUser));
     },
     switchProfile: (state, action: PayloadAction<UserProfile>) => {
       state.activeProfile = action.payload;

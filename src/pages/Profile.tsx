@@ -32,13 +32,16 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '',
-    address: '',
-    bio: '',
-    specialty: '',
-    education: '',
-    experience: '',
-    certifications: '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    bio: user?.bio || '',
+    gender: user?.gender || '',
+    blood_group: user?.blood_group || '',
+    dob: user?.dob || '',
+    specialty: user?.specialty || '',
+    education: user?.education || '',
+    experience: user?.experience || '',
+    certifications: user?.certifications || '',
   });
 
   useEffect(() => {
@@ -49,6 +52,9 @@ export default function Profile() {
         phone: user.phone || '',
         address: user.address || '',
         bio: user.bio || '',
+        gender: user.gender || '',
+        blood_group: user.blood_group || '',
+        dob: user.dob || '',
         specialty: user.specialty || '',
         education: user.education || '',
         experience: user.experience || '',
@@ -88,14 +94,17 @@ export default function Profile() {
       const { error } = await supabase
         .from('users')
         .update({
-          name: formData.name,
-          phone: formData.phone,
-          address: formData.address,
-          bio: formData.bio,
-          specialty: formData.specialty,
-          education: formData.education,
-          experience: formData.experience,
-          certifications: formData.certifications,
+          name: String(formData.name),
+          phone: String(formData.phone),
+          address: String(formData.address),
+          bio: String(formData.bio),
+          gender: String(formData.gender),
+          blood_group: String(formData.blood_group),
+          dob: String(formData.dob),
+          specialty: String(formData.specialty),
+          education: String(formData.education),
+          experience: String(formData.experience),
+          certifications: String(formData.certifications),
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -310,6 +319,63 @@ export default function Profile() {
                         />
                       </div>
                     </div>
+
+                    {user?.role === 'patient' && (
+                      <>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Gender Identity</label>
+                          <div className="relative group">
+                            <Activity className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            <select 
+                              className="input-field pl-16 py-6 appearance-none"
+                              value={formData.gender}
+                              onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                            >
+                              <option value="">Select Gender</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Non-binary">Non-binary</option>
+                              <option value="Other">Other</option>
+                              <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Blood Group</label>
+                          <div className="relative group">
+                            <Activity className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            <select 
+                              className="input-field pl-16 py-6 appearance-none"
+                              value={formData.blood_group}
+                              onChange={(e) => setFormData({...formData, blood_group: e.target.value})}
+                            >
+                              <option value="">Select Blood Group</option>
+                              <option value="A+">A+</option>
+                              <option value="A-">A-</option>
+                              <option value="B+">B+</option>
+                              <option value="B-">B-</option>
+                              <option value="AB+">AB+</option>
+                              <option value="AB-">AB-</option>
+                              <option value="O+">O+</option>
+                              <option value="O-">O-</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Date of Birth</label>
+                          <div className="relative group">
+                            <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            <input 
+                              type="date" 
+                              className="input-field pl-16 py-6" 
+                              value={formData.dob}
+                              onChange={(e) => setFormData({...formData, dob: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
                     <div className="space-y-3">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Contact Number</label>
                       <div className="relative group">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Video, Play, Loader2, Download, Shield, Info, ArrowRight, Sparkles, Volume2, Music, Activity } from 'lucide-react';
+import { Video, Play, Loader2, Download, Shield, Info, ArrowRight, Sparkles, Volume2, Music, Activity, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -145,30 +145,39 @@ export default function VideoGeneration() {
                     <span className="text-[10px] font-black text-blue-500/50 uppercase tracking-widest">Step {currentStep} of 4</span>
                   </div>
                   
-                  <div className="space-y-6">
-                    {steps.map((step) => (
-                      <div key={step.id} className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all duration-500 ${
-                          currentStep >= step.id 
-                            ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' 
-                            : 'bg-white/5 text-slate-600 border border-white/10'
-                        }`}>
-                          {currentStep > step.id ? '✓' : step.id}
+                    <div className="space-y-6">
+                      {steps.map((step) => (
+                        <div key={step.id} className="flex items-center gap-4 relative group/step">
+                          {currentStep === step.id && (
+                            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-blue-600 rounded-full animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.8)]" />
+                          )}
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black transition-all duration-500 ${
+                            currentStep >= step.id 
+                              ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] rotate-0' 
+                              : 'bg-white/5 text-slate-600 border border-white/10 rotate-12'
+                          }`}>
+                            {currentStep > step.id ? (
+                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckCircle2 className="w-4 h-4" /></motion.div>
+                            ) : step.id}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm font-black transition-colors duration-500 ${
+                              currentStep >= step.id ? 'text-white' : 'text-slate-600'
+                            }`}>{step.label}</p>
+                            <p className={`text-[10px] font-medium transition-colors duration-500 ${
+                              currentStep === step.id ? 'text-blue-400' : 'text-slate-700'
+                            }`}>{step.description}</p>
+                          </div>
+                          {currentStep === step.id && (
+                            <div className="flex gap-0.5">
+                               {[1,2,3].map(i => (
+                                 <div key={i} className="w-1 h-3 bg-blue-600/50 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
+                               ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1">
-                          <p className={`text-sm font-black transition-colors duration-500 ${
-                            currentStep >= step.id ? 'text-white' : 'text-slate-600'
-                          }`}>{step.label}</p>
-                          <p className={`text-[10px] font-medium transition-colors duration-500 ${
-                            currentStep === step.id ? 'text-blue-400' : 'text-slate-700'
-                          }`}>{step.description}</p>
-                        </div>
-                        {currentStep === step.id && (
-                          <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
 
                   <div className="pt-4 border-t border-white/5">
                     <div className="flex items-center gap-3 text-blue-400/80">
