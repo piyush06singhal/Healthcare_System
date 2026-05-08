@@ -23,11 +23,12 @@ async function startServer() {
 
   const PORT = 3000;
 
-  app.use(helmet({
-    contentSecurityPolicy: false, // Disable for development/Vite
-  }));
+  // app.use(helmet({
+  //   contentSecurityPolicy: false, // Disable for development/Vite
+  // }));
+  // app.use(cors());
+  // app.use(morgan("dev"));
   app.use(cors());
-  app.use(morgan("dev"));
   app.use(express.json());
 
   // Initialize Cron Jobs
@@ -485,14 +486,18 @@ MANDATORY DISCLAIMER: "MediFlow AI is for educational support. Final clinical de
     }
   });
 
+  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (!isProd) {
+    console.log("Starting in DEVELOPMENT mode with Vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
+    console.log("Starting in PRODUCTION mode");
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
@@ -500,11 +505,25 @@ MANDATORY DISCLAIMER: "MediFlow AI is for educational support. Final clinical de
     });
   }
 
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  // Only listen if not on Vercel
+  if (process.env.VERCEL !== "1") {
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+
+  return { app, server };
 }
 
-startServer().catch((err) => {
+const serverPromise = startServer().catch((err) => {
   console.error("Failed to start server:", err);
 });
+
+export default async (req: any, res: any) => {
+  const result = await serverPromise;
+  if (result) {
+    return result.app(req, res);
+  } else {
+    res.status(500).send("Server initialization failed");
+  }
+};

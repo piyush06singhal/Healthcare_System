@@ -196,47 +196,47 @@ const DashboardRoutes = () => {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <NotificationProvider>
-        <ErrorBoundary>
-        <Router>
-          <ScrollToTop />
-          <ProfileInitializer />
-          <div className="min-h-screen flex flex-col">
-            <Suspense fallback={<PageLoading />}>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/doctors" element={<DoctorsPage />} />
-                <Route path="/blog" element={<BlogPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/auth/callback" element={<ResetPasswordPage />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/security" element={<Security />} />
-                <Route path="/help" element={<HelpCenter />} />
-                
-                <Route path="/dashboard/*" element={
-                  <ProtectedRoute>
-                    <DashboardRoutes />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-            <Chatbot />
-            <Toaster position="top-right" richColors />
-          </div>
-        </Router>
-      </ErrorBoundary>
-      </NotificationProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <NotificationProvider>
+          <Router>
+            <ScrollToTop />
+            <ProfileInitializer />
+            <div className="min-h-screen flex flex-col">
+              <Suspense fallback={<PageLoading />}>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/services" element={<ServicesPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/doctors" element={<DoctorsPage />} />
+                  <Route path="/blog" element={<BlogPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+                  <Route path="/auth/callback" element={<ResetPasswordPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/security" element={<Security />} />
+                  <Route path="/help" element={<HelpCenter />} />
+                  
+                  <Route path="/dashboard/*" element={
+                    <ProtectedRoute>
+                      <DashboardRoutes />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+              <Chatbot />
+              <Toaster position="top-right" richColors />
+            </div>
+          </Router>
+        </NotificationProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }

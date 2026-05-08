@@ -28,6 +28,7 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('Error Details:', error);
     console.error('Component Stack:', errorInfo.componentStack);
     console.groupEnd();
+    this.setState({ hasError: true, error });
   }
 
   public render() {
